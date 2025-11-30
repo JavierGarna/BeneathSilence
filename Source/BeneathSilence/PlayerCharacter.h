@@ -35,14 +35,23 @@ private:
 	UInputMappingContext* PlayerMappingContext;
 	UPROPERTY(EditAnywhere)
 	APlayerController* PlayerController;
+	UPROPERTY()
+	bool bIsRunning = false;
 
 	// Input actions
 	UPROPERTY(EditAnywhere)
 	UInputAction* MoveForwardsAction;
 	UPROPERTY(EditAnywhere)
 	UInputAction* StrafeAction;
+	UPROPERTY(EditAnywhere)
+	UInputAction* RunAction;
 
 	// Handler declarations
 	void MoveForwardsHandler(const FInputActionValue& Value);
 	void StrafeHandler(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void StartRun();
+	UFUNCTION()
+	void StopRun();
 };

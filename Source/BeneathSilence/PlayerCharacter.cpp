@@ -50,6 +50,15 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (bIsRunning)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 500.0f; // Running speed
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 300.0f; // Walking speed
+	}
+
 }
 
 // Called to bind functionality to input
@@ -61,6 +70,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	EIC->BindAction(MoveForwardsAction, ETriggerEvent::Triggered, this, &APlayerCharacter::MoveForwardsHandler);
 	EIC->BindAction(StrafeAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StrafeHandler);
+	EIC->BindAction(RunAction, ETriggerEvent::Started, this, &APlayerCharacter::StartRun);
+	EIC->BindAction(RunAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopRun);
 }
 
 void APlayerCharacter::MoveForwardsHandler(const FInputActionValue& Value)
@@ -99,5 +110,15 @@ void APlayerCharacter::StrafeHandler(const FInputActionValue& Value)
 
 		AddMovementInput(RightDirection, InputValue);
 	}
+}
+
+void APlayerCharacter::StartRun()
+{
+	bIsRunning = true;
+}
+
+void APlayerCharacter::StopRun()
+{
+	bIsRunning = false;
 }
 
