@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
+#include "SoundLight.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -120,5 +121,18 @@ void APlayerCharacter::StartRun()
 void APlayerCharacter::StopRun()
 {
 	bIsRunning = false;
+}
+
+void APlayerCharacter::HandleFootstep(FName InSocketLocation)
+{
+	if (!SoundLightActor) return;
+
+	FVector FootLocation = GetMesh()->GetSocketLocation(InSocketLocation);
+	SoundLightActor->StartSoundWave(
+		FootLocation,
+		300.f,
+		32,
+		0.05f
+	);
 }
 

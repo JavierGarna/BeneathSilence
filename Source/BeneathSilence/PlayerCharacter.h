@@ -9,6 +9,7 @@
 
 class UInputMappingContext;
 class UInputAction;
+class ASoundLight;
 
 UCLASS()
 class BENEATHSILENCE_API APlayerCharacter : public ACharacter
@@ -35,6 +36,8 @@ private:
 	UInputMappingContext* PlayerMappingContext;
 	UPROPERTY(EditAnywhere)
 	APlayerController* PlayerController;
+	UPROPERTY(EditAnywhere)
+	ASoundLight* SoundLightActor;
 	UPROPERTY()
 	bool bIsRunning = false;
 
@@ -54,4 +57,6 @@ private:
 	void StartRun();
 	UFUNCTION()
 	void StopRun();
+	UFUNCTION(BlueprintCallable)
+	void HandleFootstep(FName InSocketLocation);
 };
