@@ -2,6 +2,7 @@
 
 
 #include "SoundLight.h"
+#include "ResidualDecal.h"
 
 // Sets default values
 ASoundLight::ASoundLight()
@@ -24,54 +25,58 @@ void ASoundLight::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
-
+ 
 void ASoundLight::StartSoundWave(const FVector& Origin, float Radius, int RayCount, float Speed)
 {
+	// Prevent invalid parameters
+    if (Speed <= 0.f) return;
+    if (Radius <= 0.f) return;
+
 	// Get the world context
     UWorld* World = GetWorld();
     if (!World) return;
 
 	// Create a new sound wave instance
-    FSoundWaveInstance& Wave = ActiveWaves.AddDefaulted_GetRef();
-
-	// Initialise wave parameters
+	FSoundWaveInstance& Wave = ActiveWaves.AddDefaulted_GetRef(); // Adds new defaulted instance and returns a reference
+	// Assign wave properties
+    Wave.ID = NextWaveID++;
     Wave.StartPoint = Origin + FVector::UpVector * ZOffset;
     Wave.Radius = Radius;
     Wave.RayCount = RayCount;
 	Wave.Speed = Speed;
 
-	// Set up a timer to tick the wave animation
+	// Set up a timer to tick the wave animation. Every Wave.Speed seconds, TickWave will be called with Wave.ID
     World->GetTimerManager().SetTimer(
         Wave.TimerHandle,
         FTimerDelegate::CreateUObject(
             this,
             &ASoundLight::TickWave,
-            ActiveWaves.Num() - 1 // Wave index
+            Wave.ID
         ),
         Wave.Speed,
         true
     );
 }
 
-void ASoundLight::TickWave(int WaveIndex)
+void ASoundLight::TickWave(int WaveID)
 {
+	int32 WaveIndex = ActiveWaves.IndexOfByPredicate([WaveID](const FSoundWaveInstance& W) { return W.ID == WaveID; });
+    
+	// Return if wave does not exist
     if (!ActiveWaves.IsValidIndex(WaveIndex))
         return;
 
     FSoundWaveInstance& Wave = ActiveWaves[WaveIndex];
-
-    if (Wave.CurrentStep > Wave.AnimationSteps)
+    if (Wave.CurrentStep > Wave.AnimationSteps) // When the wave has reached the last animation step
     {
         GetWorld()->GetTimerManager().ClearTimer(Wave.TimerHandle);
         ActiveWaves.RemoveAt(WaveIndex);
         return;
     }
 
-    float Progress =
-        Wave.CurrentStep / static_cast<float>(Wave.AnimationSteps);
+    float Progress = Wave.CurrentStep / static_cast<float>(Wave.AnimationSteps);
 
-    float VerticalAngle =
-        FMath::Lerp(-90.f, 90.f, Progress);
+    float VerticalAngle = FMath::Lerp(-90.f, 90.f, Progress);
 
     AnimateCurrentWave(
         Wave.StartPoint,
@@ -80,7 +85,7 @@ void ASoundLight::TickWave(int WaveIndex)
         VerticalAngle
     );
 
-    ++Wave.CurrentStep;
+    Wave.CurrentStep++;
 }
 
 void ASoundLight::AnimateCurrentWave(const FVector& StartPoint, float Radius, int RayCount, float VerticalAngle)
@@ -101,25 +106,23 @@ void ASoundLight::AnimateCurrentWave(const FVector& StartPoint, float Radius, in
         Params.AddIgnoredActor(this);
 
         bool bHit = World->LineTraceSingleByChannel(
-            Hit,
+            Hit, 
             StartPoint,
             EndPoint,
             ECC_Visibility,
             Params
         );
 
-        FVector DrawEnd = bHit ? Hit.ImpactPoint : EndPoint;
+        if (bHit)
+        {
+			FRotator DecalRotation = Hit.ImpactNormal.Rotation();
 
-        DrawDebugLine(
-            World,
-            StartPoint,
-            DrawEnd,
-            FColor::Cyan,
-            false,
-            0.2f,
-            0,
-            2.f
-        );
+            World->SpawnActor<AResidualDecal>(
+                ResidualDecalClass,
+                Hit.ImpactPoint,
+                DecalRotation
+			);
+        }
     }
 }
 

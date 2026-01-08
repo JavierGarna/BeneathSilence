@@ -6,15 +6,18 @@
 #include "GameFramework/Actor.h"
 #include "SoundLight.generated.h"
 
+class AResidualDecal;
+
 USTRUCT()
 struct FSoundWaveInstance
 {
 	GENERATED_BODY()
 
 	FTimerHandle TimerHandle;
-	int32 CurrentStep = 0;
-	int32 AnimationSteps = 32;
+	int CurrentStep = 0;
+	int AnimationSteps = 32;
 
+	int ID = INDEX_NONE;
 	FVector StartPoint;
 	float Radius = 0.f;
 	int RayCount = 0;
@@ -43,12 +46,16 @@ public:
 
 private:
 	float ZOffset = 5.f;
+	int NextWaveID = 1;
 
 	UPROPERTY()
 	TArray<FSoundWaveInstance> ActiveWaves;
 
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AResidualDecal> ResidualDecalClass;
+
 	UFUNCTION()
-	void TickWave(int WaveIndex);
+	void TickWave(int WaveID);
 	UFUNCTION()
 	void AnimateCurrentWave(const FVector& StartPoint, float Radius, int RayCount, float VerticalAngle);
 };
