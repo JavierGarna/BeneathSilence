@@ -13,8 +13,6 @@ AResidualDecal::AResidualDecal()
 
 	DecalComponent = CreateDefaultSubobject<UDecalComponent>(TEXT("DecalComponent"));
 	RootComponent = DecalComponent;
-
-	DecalComponent->DecalSize = FVector(6.f, 16.f, 16.f);
 }
 
 // Called when the game starts or when spawned
@@ -22,20 +20,10 @@ void AResidualDecal::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	if (!DecalMaterial)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ResidualDecal: No DecalMaterial assigned"));
-		return;
-	}
+	if (!DecalMaterial) return;
 
 	DecalComponent->SetDecalMaterial(DecalMaterial);
-
 	MID = DecalComponent->CreateDynamicMaterialInstance();
-
-	if (MID)
-	{
-		MID->SetScalarParameterValue(TEXT("Intensity"), InitialIntensity);
-	}
 }
 
 // Called every frame
@@ -43,17 +31,23 @@ void AResidualDecal::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	ElapsedTime += DeltaTime;
-	float Alpha = FMath::Clamp(ElapsedTime / LifeTime, 0.f, 1.f);
+    ElapsedTime += DeltaTime;
 
-	if (MID)
-	{
-		MID->SetScalarParameterValue(TEXT("Intensity"), FMath::Lerp(InitialIntensity, 0.f, Alpha));
-	}
+    if (MID)
+    {
+        float CurrentIntensity;
 
-	if (Alpha >= 1.f)
-	{
-		Destroy();
-	}
+        // Slow residual fade: residual -> 0
+        float FadeAlpha = ElapsedTime / TotalLifetime;
+        FadeAlpha = FMath::Clamp(FadeAlpha, 0.f, 1.f);
+
+        // Apply exponential decay for gradual dissipation
+        float EasedAlpha = FMath::Pow(FadeAlpha, FadeCurve);
+        CurrentIntensity = FMath::Lerp(Intensity, 0.f, EasedAlpha);
+
+        MID->SetScalarParameterValue(TEXT("Intensity"), CurrentIntensity);
+    }
+
+    if (ElapsedTime >= TotalLifetime) Destroy();
 }
 

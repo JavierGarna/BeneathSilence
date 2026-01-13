@@ -45,7 +45,7 @@ public:
 	void StartSoundWave(const FVector& Origin, float Radius, int RayCount, float Speed);
 
 private:
-	float ZOffset = 5.f;
+	float ZOffset = 100.f;
 	int NextWaveID = 1;
 
 	UPROPERTY()

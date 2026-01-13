@@ -29,8 +29,7 @@ void ASoundLight::Tick(float DeltaTime)
 void ASoundLight::StartSoundWave(const FVector& Origin, float Radius, int RayCount, float Speed)
 {
 	// Prevent invalid parameters
-    if (Speed <= 0.f) return;
-    if (Radius <= 0.f) return;
+    if (Radius <= 0.f || Speed <= 0.f || RayCount <= 0) return;
 
 	// Get the world context
     UWorld* World = GetWorld();
@@ -38,6 +37,7 @@ void ASoundLight::StartSoundWave(const FVector& Origin, float Radius, int RayCou
 
 	// Create a new sound wave instance
 	FSoundWaveInstance& Wave = ActiveWaves.AddDefaulted_GetRef(); // Adds new defaulted instance and returns a reference
+
 	// Assign wave properties
     Wave.ID = NextWaveID++;
     Wave.StartPoint = Origin + FVector::UpVector * ZOffset;
@@ -60,32 +60,35 @@ void ASoundLight::StartSoundWave(const FVector& Origin, float Radius, int RayCou
 
 void ASoundLight::TickWave(int WaveID)
 {
-	int32 WaveIndex = ActiveWaves.IndexOfByPredicate([WaveID](const FSoundWaveInstance& W) { return W.ID == WaveID; });
+	int32 WaveIndex = ActiveWaves.IndexOfByPredicate([WaveID](const FSoundWaveInstance& W) { return W.ID == WaveID; }); // Find index of the wave with matching ID
     
 	// Return if wave does not exist
     if (!ActiveWaves.IsValidIndex(WaveIndex))
         return;
 
-    FSoundWaveInstance& Wave = ActiveWaves[WaveIndex];
-    if (Wave.CurrentStep > Wave.AnimationSteps) // When the wave has reached the last animation step
+	FSoundWaveInstance& Wave = ActiveWaves[WaveIndex]; // Get reference to the wave instance
+
+	if (Wave.CurrentStep > Wave.AnimationSteps) // Clear timer and remove wave when animation is complete
     {
         GetWorld()->GetTimerManager().ClearTimer(Wave.TimerHandle);
         ActiveWaves.RemoveAt(WaveIndex);
         return;
     }
 
-    float Progress = Wave.CurrentStep / static_cast<float>(Wave.AnimationSteps);
+	float Progress = Wave.CurrentStep / static_cast<float>(Wave.AnimationSteps); // Calculate progress (0 to 1)
+	float CurrentRadius = FMath::Lerp(Wave.Radius, 0.f, Progress); // Interpolate current radius from max radius to 0
 
-    float VerticalAngle = FMath::Lerp(-90.f, 90.f, Progress);
+	float VerticalAngle = FMath::Lerp(-90.f, 90.f, Progress); // Interpolate vertical angle from -90 to 90 degrees
 
+	// Call animation function
     AnimateCurrentWave(
         Wave.StartPoint,
-        Wave.Radius,
+        CurrentRadius,
         Wave.RayCount,
         VerticalAngle
     );
 
-    Wave.CurrentStep++;
+	Wave.CurrentStep++; // Increment step
 }
 
 void ASoundLight::AnimateCurrentWave(const FVector& StartPoint, float Radius, int RayCount, float VerticalAngle)
@@ -96,9 +99,9 @@ void ASoundLight::AnimateCurrentWave(const FVector& StartPoint, float Radius, in
 
     for (int i = 0; i < RayCount; ++i)
     {
-        float HorizontalAngle = (360.f / RayCount) * i;
-        FVector Direction = FRotator(VerticalAngle, HorizontalAngle, 0.f).Vector();
-        FVector EndPoint = StartPoint + Direction * Radius;
+		float HorizontalAngle = (360.f / RayCount) * i; // Distribute rays evenly in horizontal plane
+		FVector Direction = FRotator(VerticalAngle, HorizontalAngle, 0.f).Vector(); // Calculate direction vector with vertical and horizontal angles
+		FVector EndPoint = StartPoint + Direction * Radius; // Calculate end point of the ray
 
         FHitResult Hit;
         FCollisionQueryParams Params;

@@ -33,11 +33,12 @@ private:
 	UPROPERTY()
 	UMaterialInstanceDynamic* MID;
 
-	float ElapsedTime = 0.f;
-
 	UPROPERTY(EditAnywhere)
-	float LifeTime = 1.5f;
-
-	UPROPERTY(EditDefaultsOnly)
-	float InitialIntensity = 0.2f;
+	float ElapsedTime = 0.f;
+	UPROPERTY(EditAnywhere)
+	float Intensity = 0.8f;
+	UPROPERTY(EditAnywhere)
+	float TotalLifetime = 1.0f;
+	UPROPERTY(EditAnywhere)
+	float FadeCurve = 20.0f;
 };
