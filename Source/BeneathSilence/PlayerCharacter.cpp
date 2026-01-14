@@ -132,7 +132,7 @@ void APlayerCharacter::HandleFootstep(FName InSocketLocation)
 		FVector FootLocation = GetMesh()->GetSocketLocation(InSocketLocation);
 		SoundLightActor->StartSoundWave(
 			FootLocation,
-			700.f,
+			1200.f,
 			32,
 			0.04f
 		);
@@ -142,9 +142,9 @@ void APlayerCharacter::HandleFootstep(FName InSocketLocation)
 		FVector FootLocation = GetMesh()->GetSocketLocation(InSocketLocation);
 		SoundLightActor->StartSoundWave(
 			FootLocation,
-			500.f,
+			800.f,
 			32,
-			0.1f
+			0.06f
 		);
 	}
 }
