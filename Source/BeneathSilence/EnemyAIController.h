@@ -6,6 +6,8 @@
 #include "AIController.h"
 #include "EnemyAIController.generated.h"
 
+class ARoomVolume;
+
 /**
  * 
  */
@@ -20,6 +22,9 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<ARoomVolume*> Rooms;
 
 private:
 	UPROPERTY(EditAnywhere)

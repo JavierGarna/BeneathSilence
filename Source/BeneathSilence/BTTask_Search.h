@@ -6,6 +6,9 @@
 #include "BehaviorTree/Tasks/BTTask_BlackboardBase.h"
 #include "BTTask_Search.generated.h"
 
+class ARoomVolume;
+class UNavigationSystemV1;
+
 /**
  * 
  */
@@ -20,4 +23,13 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComponent, uint8* NodeMemory) override;
+
+	UPROPERTY(EditAnywhere)
+	FBlackboardKeySelector RoomKey;
+
+private:
+	void GetAllRooms();
+	bool GetRandomLocationInRoom(ARoomVolume* Room, UNavigationSystemV1* NavSys, FNavLocation& OutLocation);
+	TArray<ARoomVolume*> Rooms;
+	ARoomVolume* AssignedRoom;
 };

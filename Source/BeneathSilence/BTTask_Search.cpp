@@ -5,6 +5,8 @@
 #include "AIController.h"
 #include "NavigationSystem.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "RoomVolume.h"
+#include "Kismet/GameplayStatics.h"
 
 UBTTask_Search::UBTTask_Search()
 {
@@ -15,48 +17,69 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 {
     Super::ExecuteTask(OwnerComponent, NodeMemory);
 
-	// Get the AI Controller
     AAIController* AIController = OwnerComponent.GetAIOwner();
-    if (AIController == nullptr)
+    if (!AIController) return EBTNodeResult::Failed;
+
+    APawn* AIPawn = AIController->GetPawn();
+    if (!AIPawn) return EBTNodeResult::Failed;
+
+    UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(AIPawn->GetWorld());
+    if (!NavSys) return EBTNodeResult::Failed;
+
+    UBlackboardComponent* BlackboardComp = OwnerComponent.GetBlackboardComponent();
+    GetAllRooms();
+
+    for (ARoomVolume* Room : Rooms)
     {
-        return EBTNodeResult::Failed;
+        if (Room->RoomName == BlackboardComp->GetValueAsName(RoomKey.SelectedKeyName))
+        {
+			AssignedRoom = Room;
+            break;
+        }
     }
 
-	// Get the AI Pawn
-    AActor* AIActor = AIController->GetPawn();
-    if (AIActor == nullptr)
+	if (!AssignedRoom) return EBTNodeResult::Failed;
+
+    FNavLocation RandomLocation;
+    if (GetRandomLocationInRoom(AssignedRoom, NavSys, RandomLocation))
     {
-        return EBTNodeResult::Failed;
+        BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), RandomLocation.Location);
+        return EBTNodeResult::Succeeded;
     }
 
-	float RandomRadius = 2000.0f; // Define the search radius
-	FNavLocation RandomLocation; // To store the random location
+    return EBTNodeResult::Failed;
+}
 
-    // Get the world from the AI actor
-    UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(AIActor->GetWorld());
+void UBTTask_Search::GetAllRooms()
+{
+    TArray<AActor*> RoomActors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomVolume::StaticClass(), RoomActors);
 
-    if (NavSys == nullptr)
+    Rooms.Empty();
+    for (AActor* Actor : RoomActors)
     {
-        return EBTNodeResult::Failed;
+        ARoomVolume* Room = Cast<ARoomVolume>(Actor);
+        if (Room) Rooms.Add(Room);
+
+    }
+}
+
+bool UBTTask_Search::GetRandomLocationInRoom(ARoomVolume* Room, UNavigationSystemV1* NavSys, FNavLocation& OutLocation)
+{
+    if (!Room || !NavSys) return false;
+
+    FVector Origin, BoxExtent;
+    Room->GetActorBounds(false, Origin, BoxExtent);
+    const float SearchRadius = BoxExtent.Size2D();
+
+    if (NavSys->GetRandomReachablePointInRadius(Origin, SearchRadius, OutLocation))
+    {
+        // Verify the point is actually inside the room volume
+        if (Room->EncompassesPoint(OutLocation.Location))
+        {
+            return true;
+        }
     }
 
-    // Get a random reachable point
-    bool bSuccess = NavSys->GetRandomReachablePointInRadius(
-        AIActor->GetActorLocation(),
-        RandomRadius,
-        RandomLocation
-    );
-
-    if (!bSuccess)
-    {
-        return EBTNodeResult::Failed;
-    }
-
-	// Set the random location in the blackboard
-    OwnerComponent.GetBlackboardComponent()->SetValueAsVector(
-        GetSelectedBlackboardKey(),
-        RandomLocation.Location
-    );    
-
-    return EBTNodeResult::Succeeded;
+    return false;
 }
