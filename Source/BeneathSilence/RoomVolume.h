@@ -17,4 +17,7 @@ class BENEATHSILENCE_API ARoomVolume : public ATriggerVolume
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName RoomName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FName> ConnectedRooms;
 };

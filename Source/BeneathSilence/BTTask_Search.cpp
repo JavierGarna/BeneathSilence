@@ -70,13 +70,21 @@ bool UBTTask_Search::GetRandomLocationInRoom(ARoomVolume* Room, UNavigationSyste
 
     FVector Origin, BoxExtent;
     Room->GetActorBounds(false, Origin, BoxExtent);
-    const float SearchRadius = BoxExtent.Size2D();
 
-    if (NavSys->GetRandomReachablePointInRadius(Origin, SearchRadius, OutLocation))
+    FVector RandomPoint = Origin + FVector(
+        FMath::FRandRange(-BoxExtent.X, BoxExtent.X),
+        FMath::FRandRange(-BoxExtent.Y, BoxExtent.Y),
+        FMath::FRandRange(-BoxExtent.Z, BoxExtent.Z)
+    );
+
+    if (!Room->EncompassesPoint(RandomPoint)) return false;
+
+    FNavLocation Projected;
+    if (NavSys->ProjectPointToNavigation(RandomPoint, Projected, FVector(50.f, 50.f, 150.f)))
     {
-        // Verify the point is actually inside the room volume
-        if (Room->EncompassesPoint(OutLocation.Location))
+        if (Room->EncompassesPoint(Projected.Location))
         {
+            OutLocation = Projected;
             return true;
         }
     }
