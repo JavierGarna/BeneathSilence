@@ -134,7 +134,8 @@ void APlayerCharacter::HandleFootstep(FName InSocketLocation)
 			FootLocation,
 			1200.f,
 			32,
-			0.04f
+			0.04f,
+			this
 		);
 	}
 	else
@@ -144,7 +145,8 @@ void APlayerCharacter::HandleFootstep(FName InSocketLocation)
 			FootLocation,
 			800.f,
 			32,
-			0.06f
+			0.06f,
+			this
 		);
 	}
 }

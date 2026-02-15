@@ -42,7 +42,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION()
-	void StartSoundWave(const FVector& Origin, float Radius, int RayCount, float Speed);
+	void StartSoundWave(const FVector& Origin, float Radius, int RayCount, float Speed, AActor* WaveOwner);
 
 private:
 	float ZOffset = 100.f;

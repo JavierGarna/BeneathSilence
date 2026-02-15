@@ -3,6 +3,8 @@
 
 #include "SoundLight.h"
 #include "ResidualDecal.h"
+#include "Perception/AISense_Hearing.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ASoundLight::ASoundLight()
@@ -26,7 +28,7 @@ void ASoundLight::Tick(float DeltaTime)
 
 }
  
-void ASoundLight::StartSoundWave(const FVector& Origin, float Radius, int RayCount, float Speed)
+void ASoundLight::StartSoundWave(const FVector& Origin, float Radius, int RayCount, float Speed, AActor* WaveOwner)
 {
 	// Prevent invalid parameters
     if (Radius <= 0.f || Speed <= 0.f || RayCount <= 0) return;
@@ -34,6 +36,16 @@ void ASoundLight::StartSoundWave(const FVector& Origin, float Radius, int RayCou
 	// Get the world context
     UWorld* World = GetWorld();
     if (!World) return;
+
+	// Report the noise event to the AI perception system so that AI can react to it
+    UAISense_Hearing::ReportNoiseEvent(
+        GetWorld(),
+        Origin,
+        5.0f,
+        WaveOwner,
+        Radius,
+        NAME_None
+    );
 
 	// Create a new sound wave instance
 	FSoundWaveInstance& Wave = ActiveWaves.AddDefaulted_GetRef(); // Adds new defaulted instance and returns a reference

@@ -7,6 +7,7 @@
 #include "EnemyAIController.generated.h"
 
 class ARoomVolume;
+struct FAIStimulus;
 
 /**
  * 
@@ -29,4 +30,7 @@ public:
 private:
 	UPROPERTY(EditAnywhere)
 	UBehaviorTree* EnemyBehaviorTree;
+
+	UFUNCTION()
+	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 };

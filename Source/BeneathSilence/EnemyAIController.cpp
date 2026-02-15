@@ -6,6 +6,10 @@
 #include "Engine/TargetPoint.h"
 #include "RoomVolume.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AIPerceptionTypes.h"
+#include "Perception/AISense_Hearing.h"
+#include "Perception/AIPerceptionSystem.h"
 
 void AEnemyAIController::BeginPlay()
 {
@@ -19,6 +23,13 @@ void AEnemyAIController::BeginPlay()
 	TArray<AActor*> RoomActors;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomVolume::StaticClass(), RoomActors);
 
+	UAIPerceptionComponent* PerceptionComp = GetPerceptionComponent();
+
+	if (PerceptionComp)
+	{
+		PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &AEnemyAIController::OnTargetPerceptionUpdated);
+	}
+
 	Rooms.Empty();
 	for (AActor* Actor : RoomActors)
 	{
@@ -26,10 +37,24 @@ void AEnemyAIController::BeginPlay()
 		if (Room) Rooms.Add(Room);
 
 	}
+
 }
 
 void AEnemyAIController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AEnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
+{
+	TSubclassOf<UAISense> SenseClass = UAIPerceptionSystem::GetSenseClassForStimulus(this, Stimulus);
+
+	if (SenseClass == UAISense_Hearing::StaticClass())
+	{
+		UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+
+		BlackboardComp->SetValueAsVector("StimulusLocation", Stimulus.StimulusLocation);
+		BlackboardComp->SetValueAsFloat("StimulusStrength", Stimulus.Strength);
+	}
 }
