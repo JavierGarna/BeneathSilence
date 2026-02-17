@@ -9,6 +9,24 @@
 class ARoomVolume;
 struct FAIStimulus;
 
+USTRUCT(BlueprintType)
+struct FEnemyLearningData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	float PlayerNoiseLevel = 0.0f;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector PlayerPosition = FVector::ZeroVector;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool bPlayerVisible = false;
+
+	UPROPERTY(BlueprintReadOnly)
+	FName CurrentState = "Search";
+};
+
 /**
  * 
  */
@@ -26,6 +44,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<ARoomVolume*> Rooms;
+
+	UFUNCTION()
+	FEnemyLearningData GetLearningData();
+
+	UFUNCTION()
+	void SetCurrentState(FName NewState);
 
 private:
 	UPROPERTY(EditAnywhere)

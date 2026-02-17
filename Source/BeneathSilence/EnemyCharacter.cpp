@@ -2,6 +2,8 @@
 
 
 #include "EnemyCharacter.h"
+#include "Kismet/GameplayStatics.h"
+#include "LearningAgentsManager.h"
 
 // Sets default values
 AEnemyCharacter::AEnemyCharacter()
@@ -15,7 +17,26 @@ AEnemyCharacter::AEnemyCharacter()
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	TArray<AActor*> LearningAgentsManagers;
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("LearningAgentsManager"), LearningAgentsManagers);
+
+	for (AActor* Actor : LearningAgentsManagers)
+	{
+		ULearningAgentsManager* EnemyManager = Actor->FindComponentByClass<ULearningAgentsManager>();
+
+		if (EnemyManager)
+		{
+			AgentID = EnemyManager->AddAgent(this);
+			bManagerFound = true;
+			break;
+		}
+	}
+
+	if (!bManagerFound)
+	{
+		UE_LOG(LogTemp, Error, TEXT("LearningAgentsManager not found."));
+	}
 }
 
 // Called every frame

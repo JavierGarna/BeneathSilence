@@ -46,6 +46,23 @@ void AEnemyAIController::Tick(float DeltaTime)
 
 }
 
+FEnemyLearningData AEnemyAIController::GetLearningData()
+{
+	FEnemyLearningData LearningData;
+
+	LearningData.PlayerNoiseLevel = GetBlackboardComponent()->GetValueAsFloat("StimulusStrength");
+	LearningData.PlayerPosition = GetBlackboardComponent()->GetValueAsVector("StimulusLocation");
+	LearningData.bPlayerVisible = GetBlackboardComponent()->GetValueAsBool("PlayerVisible");
+	FName CurrentState = GetBlackboardComponent()->GetValueAsName("CurrentState");
+
+	return LearningData;
+}
+
+void AEnemyAIController::SetCurrentState(FName NewState)
+{
+	GetBlackboardComponent()->SetValueAsName("CurrentState", NewState);
+}
+
 void AEnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
 	TSubclassOf<UAISense> SenseClass = UAIPerceptionSystem::GetSenseClassForStimulus(this, Stimulus);

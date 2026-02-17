@@ -10,7 +10,8 @@
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine",
-				"AIModule"
+				"AIModule",
+				"LearningAgents"
 			]
 		}
 	],
@@ -21,6 +22,10 @@
 			"TargetAllowList": [
 				"Editor"
 			]
+		},
+		{
+			"Name": "LearningAgents",
+			"Enabled": true
 		}
 	]
 }
