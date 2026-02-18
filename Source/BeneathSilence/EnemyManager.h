@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "EnemyManager.generated.h"
 
+class ULearningAgentsManager;
+
 UCLASS()
 class BENEATHSILENCE_API AEnemyManager : public AActor
 {
@@ -23,4 +25,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	//ULearningAgentsManager* LearningAgentsManager;
 };

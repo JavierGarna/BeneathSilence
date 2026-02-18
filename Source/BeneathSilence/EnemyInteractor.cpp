@@ -13,7 +13,6 @@ void UEnemyInteractor::SpecifyAgentObservation_Implementation(FLearningAgentsObs
 	// Sub-elements of the EnemyData struct observation
 	Elements.Add(TEXT("PlayerNoiseLevel"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("PlayerNoiseLevel")));
 	Elements.Add(TEXT("PlayerPosition"), ULearningAgentsObservations::SpecifyLocationObservation(InObservationSchema, 100.0f, TEXT("PlayerPosition")));
-	Elements.Add(TEXT("PlayerVisible"), ULearningAgentsObservations::SpecifyBoolObservation(InObservationSchema, TEXT("PlayerVisible")));
 	Elements.Add(TEXT("CurrentState"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, 4, TEXT("CurrentState")));
 
 	OutObservationSchemaElement = ULearningAgentsObservations::SpecifyStructObservation(InObservationSchema, Elements);
@@ -35,7 +34,6 @@ void UEnemyInteractor::GatherAgentObservation_Implementation(FLearningAgentsObse
 
 		Elements.Add(TEXT("PlayerNoiseLevel"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.PlayerNoiseLevel));
 		Elements.Add(TEXT("PlayerPosition"), ULearningAgentsObservations::MakeLocationObservation(InObservationObject, LearningData.PlayerPosition));
-		Elements.Add(TEXT("PlayerVisible"), ULearningAgentsObservations::MakeBoolObservation(InObservationObject, LearningData.bPlayerVisible));
 	}
 
 	OutObservationObjectElement = ULearningAgentsObservations::MakeStructObservation(InObservationObject, Elements);
