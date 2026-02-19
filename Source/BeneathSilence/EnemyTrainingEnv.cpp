@@ -6,6 +6,8 @@
 #include "EnemyAIController.h"
 #include "LearningAgentsRewards.h"
 #include "PlayerCharacter.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "AIController.h"
 
 void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const int32 AgentId)
 {
@@ -33,4 +35,35 @@ void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const
 	{
 		OutReward += ULearningAgentsRewards::MakeRewardFromLocationSimilarity(EnemyLocation, PlayerLocation, 200.f, 20.f);
 	}
+}
+
+void UEnemyTrainingEnv::GatherAgentCompletion_Implementation(ELearningAgentsCompletion& OutCompletion, const int32 AgentId)
+{
+	UObject* CompletionActor = GetAgent(AgentId, AEnemyCharacter::StaticClass());
+	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(CompletionActor);
+
+	bool bPlayerCaught = false;
+	if (Enemy)
+	{
+		AAIController* AIController = Cast<AAIController>(Enemy->GetController());
+		if (AIController)
+		{
+			UBlackboardComponent* BlackboardComp = AIController->GetBlackboardComponent();
+
+			if (BlackboardComp)
+			{
+				bPlayerCaught = BlackboardComp->GetValueAsBool("PlayerCaught");
+			}
+		}
+	}
+
+	OutCompletion = ULearningAgentsCompletions::MakeCompletionOnCondition(bPlayerCaught, ELearningAgentsCompletion::Termination);
+}
+
+void UEnemyTrainingEnv::ResetAgentEpisodes_Implementation(const TArray<int32>& AgentIds)
+{
+	UObject* ResetActor = GetAgent(AgentIds[0], AEnemyCharacter::StaticClass());
+	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(ResetActor);
+
+	Enemy->Reset();
 }

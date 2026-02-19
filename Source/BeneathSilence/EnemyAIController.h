@@ -21,9 +21,6 @@ struct FEnemyLearningData
 	FVector PlayerPosition = FVector::ZeroVector;
 
 	UPROPERTY(BlueprintReadOnly)
-	bool bPlayerVisible = false;
-
-	UPROPERTY(BlueprintReadOnly)
 	FName CurrentState = "Search";
 };
 

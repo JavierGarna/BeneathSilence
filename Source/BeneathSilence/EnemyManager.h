@@ -6,8 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "EnemyManager.generated.h"
 
-class ULearningAgentsManager;
-
 UCLASS()
 class BENEATHSILENCE_API AEnemyManager : public AActor
 {
@@ -27,4 +25,5 @@ public:
 
 	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	//ULearningAgentsManager* LearningAgentsManager;
+
 };

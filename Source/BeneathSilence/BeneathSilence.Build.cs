@@ -8,9 +8,9 @@ public class BeneathSilence : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "AIModule", "NavigationSystem" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "AIModule", "NavigationSystem", "LearningAgentsTraining" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "LearningTraining" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "LearningAgents", "LearningAgentsTraining" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
