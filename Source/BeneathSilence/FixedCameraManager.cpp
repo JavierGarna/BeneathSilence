@@ -2,6 +2,7 @@
 
 
 #include "FixedCameraManager.h"
+#include "FixedCamera.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -9,88 +10,39 @@ AFixedCameraManager::AFixedCameraManager()
 {
     CurrentFixedCamera = nullptr;
     TargetFixedCamera = nullptr;
-    BlendAlpha = 0.0f;
-    BlendDuration = 0.5f;
-    BlendTimeElapsed = 0.0f;
-    bIsBlending = false;
 }
 
-void AFixedCameraManager::SwitchToFixedCamera(AActor* NewCameraActor, float BlendTime)
+void AFixedCameraManager::SwitchToFixedCamera(AFixedCamera* NewCameraActor, float BlendTime)
 {
-    if (!NewCameraActor)
-    {
-        return;
-    }
+    if (!NewCameraActor) return;
 
-    if (NewCameraActor == CurrentFixedCamera && !bIsBlending)
-    {
-        return;
-    }
+    if (NewCameraActor == CurrentFixedCamera) return;
 
     UCameraComponent* NewCameraComp = GetCameraComponent(NewCameraActor);
-    if (!NewCameraComp)
-    {
-        return;
-    }
+
+    if (!NewCameraComp) return;
 
     if (CurrentFixedCamera)
     {
         UCameraComponent* CurrentCameraComp = GetCameraComponent(CurrentFixedCamera);
-        if (CurrentCameraComp)
-        {
-            BlendStartLocation = CurrentCameraComp->GetComponentLocation();
-            BlendStartRotation = CurrentCameraComp->GetComponentRotation();
-            BlendStartFOV = CurrentCameraComp->FieldOfView;
-        }
     }
     else
     {
         CurrentFixedCamera = NewCameraActor;
-        bIsBlending = false;
         return;
     }
 
-    BlendTargetLocation = NewCameraComp->GetComponentLocation();
-    BlendTargetRotation = NewCameraComp->GetComponentRotation();
-    BlendTargetFOV = NewCameraComp->FieldOfView;
-
     TargetFixedCamera = NewCameraActor;
-    BlendDuration = BlendTime;
-    BlendTimeElapsed = 0.0f;
-    BlendAlpha = 0.0f;
-    bIsBlending = true;
 }
 
 void AFixedCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTime)
 {
     Super::UpdateViewTarget(OutVT, DeltaTime);
 
-    if (bIsBlending && TargetFixedCamera)
+    if (TargetFixedCamera)
     {
-        BlendTimeElapsed += DeltaTime;
-        BlendAlpha = FMath::Clamp(BlendTimeElapsed / BlendDuration, 0.0f, 1.0f);
-
-        float CurvedAlpha = BlendAlpha * BlendAlpha * (3.0f - 2.0f * BlendAlpha);
-
-        FVector BlendedLocation = FMath::Lerp(BlendStartLocation, BlendTargetLocation, CurvedAlpha);
-
-        FQuat StartQuat = BlendStartRotation.Quaternion();
-        FQuat TargetQuat = BlendTargetRotation.Quaternion();
-        FQuat BlendedQuat = FQuat::Slerp(StartQuat, TargetQuat, CurvedAlpha);
-        FRotator BlendedRotation = BlendedQuat.Rotator();
-
-        float BlendedFOV = FMath::Lerp(BlendStartFOV, BlendTargetFOV, CurvedAlpha);
-
-        OutVT.POV.Location = BlendedLocation;
-        OutVT.POV.Rotation = BlendedRotation;
-        OutVT.POV.FOV = BlendedFOV;
-
-        if (BlendAlpha >= 1.0f)
-        {
-            CurrentFixedCamera = TargetFixedCamera;
-            TargetFixedCamera = nullptr;
-            bIsBlending = false;
-        }
+        CurrentFixedCamera = TargetFixedCamera;
+        TargetFixedCamera = nullptr;
     }
     else if (CurrentFixedCamera)
     {
@@ -104,7 +56,7 @@ void AFixedCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTime)
     }
 }
 
-UCameraComponent* AFixedCameraManager::GetCameraComponent(AActor* Actor) const
+UCameraComponent* AFixedCameraManager::GetCameraComponent(AFixedCamera* Actor) const
 {
     if (!Actor)
     {

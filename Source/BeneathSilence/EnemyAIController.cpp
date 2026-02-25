@@ -2,6 +2,8 @@
 
 
 #include "EnemyAIController.h"
+#include "EnemyCharacter.h"
+#include "PlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/TargetPoint.h"
 #include "RoomVolume.h"
@@ -15,51 +17,109 @@ void AEnemyAIController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+
 	if (EnemyBehaviorTree)
 	{
 		RunBehaviorTree(EnemyBehaviorTree);
+		BlackboardComp = GetBlackboardComponent();
 	}
 
-	TArray<AActor*> RoomActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomVolume::StaticClass(), RoomActors);
+	if (BlackboardComp)
+	{
+		BlackboardComp->SetValueAsObject("SelfActor", GetPawn());
+		BlackboardComp->SetValueAsObject("PlayerActor", UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+		BlackboardComp->SetValueAsEnum("CurrentState", 0);
+		BlackboardComp->SetValueAsEnum("CurrentStrategy", 0);
+	}
 
 	UAIPerceptionComponent* PerceptionComp = GetPerceptionComponent();
 
-	if (PerceptionComp)
-	{
-		PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &AEnemyAIController::OnTargetPerceptionUpdated);
-	}
-
-	Rooms.Empty();
-	for (AActor* Actor : RoomActors)
-	{
-		ARoomVolume* Room = Cast<ARoomVolume>(Actor);
-		if (Room) Rooms.Add(Room);
-
-	}
-
+	if (PerceptionComp) PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &AEnemyAIController::OnTargetPerceptionUpdated);
 }
 
 void AEnemyAIController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (BlackboardComp)
+	{
+		BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", BlackboardComp->GetValueAsFloat("TimeSinceLastSeen") + DeltaTime);
+		BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", BlackboardComp->GetValueAsFloat("TimeSinceLastStimulus") + DeltaTime);
+
+		if (Player && GetPawn())
+		{
+			BlackboardComp->SetValueAsFloat("CurrentDistanceToPlayer",FVector::Dist(GetPawn()->GetActorLocation(), Player->GetActorLocation()));
+		}
+		
+		if (PlayerCurrentRoom)
+		{
+			if (PlayerCurrentRoom->ConnectedRooms.Contains(EnemyCurrentRoom)) BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", true);
+			else BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", false);
+		}
+
+		if (EnemyCurrentRoom) EnemyCurrentRoom->EnemyTimeInRoom += DeltaTime;
+	}
 }
 
 FEnemyLearningData AEnemyAIController::GetLearningData()
 {
 	FEnemyLearningData LearningData;
 
-	LearningData.PlayerNoiseLevel = GetBlackboardComponent()->GetValueAsFloat("StimulusStrength");
-	LearningData.PlayerPosition = GetBlackboardComponent()->GetValueAsVector("StimulusLocation");
-	FName CurrentState = GetBlackboardComponent()->GetValueAsName("CurrentState");
+	LearningData.SelfActor = Cast<AEnemyCharacter>(GetBlackboardComponent()->GetValueAsObject("SelfActor"));
+	LearningData.CurrentState = GetBlackboardComponent()->GetValueAsEnum("CurrentState");
+	LearningData.CurrentStrategy = GetBlackboardComponent()->GetValueAsEnum("CurrentStrategy");
+
+	LearningData.TargetActor = GetBlackboardComponent()->GetValueAsObject("TargetActor");
+	LearningData.TargetLocation = GetBlackboardComponent()->GetValueAsVector("TargetLocation");
+	LearningData.TargetRoom = Cast<ARoomVolume>(GetBlackboardComponent()->GetValueAsObject("TargetRoom"));
+
+	LearningData.LastKnownPlayerLocation = GetBlackboardComponent()->GetValueAsVector("LastKnownPlayerLocation");
+	LearningData.LastKnownPlayerRoom = GetBlackboardComponent()->GetValueAsInt("LastKnownPlayerRoom");
+	LearningData.TimeSinceLastSeen = GetBlackboardComponent()->GetValueAsFloat("TimeSinceLastSeen");
+	LearningData.ConfidenceLevel = GetBlackboardComponent()->GetValueAsFloat("ConfidenceLevel");
+
+	LearningData.LastStimulusStrength = GetBlackboardComponent()->GetValueAsFloat("LastStimulusStrength");
+	LearningData.LastStimulusLocation = GetBlackboardComponent()->GetValueAsVector("LastStimulusLocation");
+	LearningData.TimeSinceLastStimulus = GetBlackboardComponent()->GetValueAsFloat("TimeSinceLastStimulus");
+
+	LearningData.CurrentDistanceToPlayer = GetBlackboardComponent()->GetValueAsFloat("CurrentDistanceToPlayer");
+	LearningData.IsAdjacentToPlayerRoom = GetBlackboardComponent()->GetValueAsBool("IsAdjacentToPlayerRoom");
+
+	LearningData.DesiredTensionLevel = GetBlackboardComponent()->GetValueAsFloat("DesiredTensionLevel");
+	LearningData.CurrentTensionLevel = GetBlackboardComponent()->GetValueAsFloat("CurrentTensionLevel");
 
 	return LearningData;
+}
+
+TArray<float> AEnemyAIController::GetEnemyTimeInRooms()
+{
+	return EnemyTimeInRooms;
+}
+
+TArray<float> AEnemyAIController::GetPlayerTimeInRooms()
+{
+	return PlayerTimeInRooms;
+}
+
+ARoomVolume* AEnemyAIController::GetPlayerCurrentRoom()
+{
+	return PlayerCurrentRoom;
 }
 
 void AEnemyAIController::SetCurrentState(FName NewState)
 {
 	GetBlackboardComponent()->SetValueAsName("CurrentState", NewState);
+}
+
+void AEnemyAIController::SetEnemyCurrentRoom(ARoomVolume* NewRoom)
+{
+	EnemyCurrentRoom = NewRoom;
+}
+
+void AEnemyAIController::SetPlayerCurrentRoom(ARoomVolume* NewRoom)
+{
+	PlayerCurrentRoom = NewRoom;
 }
 
 void AEnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
@@ -68,9 +128,11 @@ void AEnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus St
 
 	if (SenseClass == UAISense_Hearing::StaticClass())
 	{
-		UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+		BlackboardComp->SetValueAsVector("LastStimulusLocation", Stimulus.StimulusLocation);
+		BlackboardComp->SetValueAsFloat("LastStimulusStrength", Stimulus.Strength);
+		BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", 0.0f);
 
-		BlackboardComp->SetValueAsVector("StimulusLocation", Stimulus.StimulusLocation);
-		BlackboardComp->SetValueAsFloat("StimulusStrength", Stimulus.Strength);
+		// log all stimulus
+		UE_LOG(LogTemp, Log, TEXT("Heard stimulus from %s at location %s with strength %f"), *Actor->GetName(), *Stimulus.StimulusLocation.ToString(), Stimulus.Strength);
 	}
 }

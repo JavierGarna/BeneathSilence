@@ -4,24 +4,58 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "EnemyAIController.generated.h"
 
 class ARoomVolume;
 struct FAIStimulus;
+class UBehaviorTree;
+class UBlackboardComponent;
+class APlayerCharacter;
+
+
+enum EEnemyState
+{
+	Idle,
+	Search,
+	Investigate,
+	Chase
+};
+
+enum EEnemyStrategy
+{
+	Normal,
+	Aggressive,
+	Cautious,
+};
 
 USTRUCT(BlueprintType)
 struct FEnemyLearningData
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadOnly)
-	float PlayerNoiseLevel = 0.0f;
+	UObject* SelfActor = nullptr;
+	uint8 CurrentState = Idle;
+	uint8 CurrentStrategy = Normal;
 
-	UPROPERTY(BlueprintReadOnly)
-	FVector PlayerPosition = FVector::ZeroVector;
+	UObject* TargetActor = nullptr;
+	FVector TargetLocation = FVector::ZeroVector;
+	ARoomVolume* TargetRoom = nullptr;
 
-	UPROPERTY(BlueprintReadOnly)
-	FName CurrentState = "Search";
+	FVector LastKnownPlayerLocation = FVector::ZeroVector;
+	int LastKnownPlayerRoom = 0;
+	float TimeSinceLastSeen = 9999.0f;
+	float ConfidenceLevel = 0.0f;
+
+	float LastStimulusStrength = 0.0f;
+	FVector LastStimulusLocation = FVector::ZeroVector;
+	float TimeSinceLastStimulus = 9999.0f;
+
+	float CurrentDistanceToPlayer = 0.0f;
+	bool IsAdjacentToPlayerRoom = false;
+
+	float DesiredTensionLevel = 0.0f;
+	float CurrentTensionLevel = 0.0f;
 };
 
 /**
@@ -39,19 +73,35 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<ARoomVolume*> Rooms;
-
-	UFUNCTION()
 	FEnemyLearningData GetLearningData();
+	TArray<float> GetEnemyTimeInRooms();
+	TArray<float> GetPlayerTimeInRooms();
+	ARoomVolume* GetPlayerCurrentRoom();
 
-	UFUNCTION()
 	void SetCurrentState(FName NewState);
+	void SetEnemyCurrentRoom(ARoomVolume* NewRoom);
+	void SetPlayerCurrentRoom(ARoomVolume* NewRoom);
+
 
 private:
 	UPROPERTY(EditAnywhere)
 	UBehaviorTree* EnemyBehaviorTree;
 
+	UPROPERTY(EditAnywhere)
+	UBlackboardComponent* BlackboardComp;
+	UPROPERTY(EditAnywhere)
+	APlayerCharacter* Player;
+
+	UPROPERTY(EditAnywhere)
+	ARoomVolume* EnemyCurrentRoom;
+	UPROPERTY(EditAnywhere)
+	ARoomVolume* PlayerCurrentRoom;
+	UPROPERTY(EditAnywhere)
+	TArray<float> EnemyTimeInRooms;
+	UPROPERTY(EditAnywhere)
+	TArray<float> PlayerTimeInRooms;
+
 	UFUNCTION()
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+
 };

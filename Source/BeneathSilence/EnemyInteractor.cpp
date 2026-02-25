@@ -4,15 +4,40 @@
 #include "EnemyInteractor.h"
 #include "EnemyCharacter.h"
 #include "EnemyAIController.h"
+#include "RoomVolume.h"
+#include "Kismet/GameplayStatics.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 void UEnemyInteractor::SpecifyAgentObservation_Implementation(FLearningAgentsObservationSchemaElement& OutObservationSchemaElement, ULearningAgentsObservationSchema* InObservationSchema)
 {
+	TArray<AActor*> RoomActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomVolume::StaticClass(), RoomActors);
+
+	Rooms.Empty();
+	for (AActor* Actor : RoomActors)
+	{
+		ARoomVolume* Room = Cast<ARoomVolume>(Actor);
+		if (Room) Rooms.Add(Room);
+	}
+
 	// Use the LearningAgents API to specify a struct observation for EnemyData
 	TMap<FName, FLearningAgentsObservationSchemaElement> Elements;
 
 	// Sub-elements of the EnemyData struct observation
-	Elements.Add(TEXT("PlayerNoiseLevel"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("NoiseObservation")));
-	Elements.Add(TEXT("PlayerPosition"), ULearningAgentsObservations::SpecifyLocationObservation(InObservationSchema, 1.0f, TEXT("PlayerPositionObservation")));
+	Elements.Add(TEXT("CurrentState"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, 4, TEXT("CurrentStateObservation")));
+	Elements.Add(TEXT("CurrentStrategy"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, 3, TEXT("CurrentStrategyObservation")));
+	
+	Elements.Add(TEXT("LastKnownPlayerLocation"), ULearningAgentsObservations::SpecifyLocationObservation(InObservationSchema, 1.0f, TEXT("LastKnownPlayerLocationObservation")));
+	Elements.Add(TEXT("LastKnownPlayerRoom"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, Rooms.Num(), TEXT("LastKnownPlayerRoomObservation")));
+	Elements.Add(TEXT("TimeSincePlayerSeen"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("TimeSincePlayerSeenObservation")));
+	Elements.Add(TEXT("ConfidenceLevel"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("ConfidenceLevelObservation")));
+
+	Elements.Add(TEXT("LastStimulusStrength"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("LastStimulusStrengthObservation")));
+	Elements.Add(TEXT("LastStimulusLocation"), ULearningAgentsObservations::SpecifyLocationObservation(InObservationSchema, 1.0f, TEXT("LastStimulusLocationObservation")));
+	Elements.Add(TEXT("TimeSinceLastStimulus"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("TimeSinceLastStimulusObservation")));
+
+	Elements.Add(TEXT("CurrentDistanceToPlayer"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("CurrentDistanceToPlayerObservation")));
+	Elements.Add(TEXT("IsAdjacentToPlayerRoom"), ULearningAgentsObservations::SpecifyBoolObservation(InObservationSchema, TEXT("IsAdjacentToPlayerRoomObservation")));
 
 	OutObservationSchemaElement = ULearningAgentsObservations::SpecifyStructObservation(InObservationSchema, Elements, TEXT("Observations"));
 }
@@ -31,8 +56,20 @@ void UEnemyInteractor::GatherAgentObservation_Implementation(FLearningAgentsObse
 			LearningData = EnemyAIController->GetLearningData();
 		}
 
-		Elements.Add(TEXT("PlayerNoiseLevel"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.PlayerNoiseLevel, TEXT("NoiseObservation")));
-		Elements.Add(TEXT("PlayerPosition"), ULearningAgentsObservations::MakeLocationObservation(InObservationObject, LearningData.PlayerPosition, FTransform(), TEXT("PlayerPositionObservation")));
+		Elements.Add(TEXT("CurrentState"), ULearningAgentsObservations::MakeExclusiveDiscreteObservation(InObservationObject, LearningData.CurrentState, TEXT("CurrentStateObservation")));
+		Elements.Add(TEXT("CurrentStrategy"), ULearningAgentsObservations::MakeExclusiveDiscreteObservation(InObservationObject, LearningData.CurrentStrategy, TEXT("CurrentStrategyObservation")));
+
+		Elements.Add(TEXT("LastKnownPlayerLocation"), ULearningAgentsObservations::MakeLocationObservation(InObservationObject, LearningData.LastKnownPlayerLocation, FTransform(), TEXT("LastKnownPlayerLocationObservation")));
+		Elements.Add(TEXT("LastKnownPlayerRoom"), ULearningAgentsObservations::MakeExclusiveDiscreteObservation(InObservationObject, LearningData.LastKnownPlayerRoom, TEXT("LastKnownPlayerRoomObservation")));
+		Elements.Add(TEXT("TimeSincePlayerSeen"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.TimeSinceLastSeen, TEXT("TimeSincePlayerSeenObservation")));
+		Elements.Add(TEXT("ConfidenceLevel"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.ConfidenceLevel, TEXT("ConfidenceLevelObservation")));
+
+		Elements.Add(TEXT("LastStimulusStrength"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.LastStimulusStrength, TEXT("LastStimulusStrengthObservation")));
+		Elements.Add(TEXT("LastStimulusLocation"), ULearningAgentsObservations::MakeLocationObservation(InObservationObject, LearningData.LastStimulusLocation, FTransform(), TEXT("LastStimulusLocationObservation")));
+		Elements.Add(TEXT("TimeSinceLastStimulus"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.TimeSinceLastStimulus, TEXT("TimeSinceLastStimulusObservation")));
+
+		Elements.Add(TEXT("CurrentDistanceToPlayer"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.CurrentDistanceToPlayer, TEXT("CurrentDistanceToPlayerObservation")));
+		Elements.Add(TEXT("IsAdjacentToPlayerRoom"), ULearningAgentsObservations::MakeBoolObservation(InObservationObject, LearningData.IsAdjacentToPlayerRoom , TEXT("IsAdjacentToPlayerRoomObservation")));
 	}
 
 	OutObservationObjectElement = ULearningAgentsObservations::MakeStructObservation(InObservationObject, Elements, TEXT("Observations"));
@@ -42,9 +79,10 @@ void UEnemyInteractor::SpecifyAgentAction_Implementation(FLearningAgentsActionSc
 {
 	TMap<FName, FLearningAgentsActionSchemaElement> Elements;
 
-	Elements.Add(TEXT("Search"), ULearningAgentsActions::SpecifyFloatAction(InActionSchema, 1.0f, TEXT("Search")));
-	Elements.Add(TEXT("Investigate"), ULearningAgentsActions::SpecifyFloatAction(InActionSchema, 1.0f, TEXT("Investigate")));
-	Elements.Add(TEXT("Chase"), ULearningAgentsActions::SpecifyFloatAction(InActionSchema, 1.0f, TEXT("Chase")));
+	Elements.Add(TEXT("CurrentState"), ULearningAgentsActions::SpecifyExclusiveDiscreteAction(InActionSchema, 4, StatePriorProbabilities, TEXT("CurrentStateAction")));
+	Elements.Add(TEXT("CurrentStrategy"), ULearningAgentsActions::SpecifyExclusiveDiscreteAction(InActionSchema, 3, StrategyPriorProbabilities, TEXT("CurrentStrategyAction")));
+	Elements.Add(TEXT("DesiredTensionLevel"), ULearningAgentsActions::SpecifyFloatAction(InActionSchema, 1.0f, TEXT("DesiredTensionLevelAction")));
+	Elements.Add(TEXT("CurrentTensionLevel"), ULearningAgentsActions::SpecifyFloatAction(InActionSchema, 1.0f, TEXT("CurrentTensionLevelAction")));
 
 	OutActionSchemaElement = ULearningAgentsActions::SpecifyStructAction(InActionSchema, Elements);
 }
@@ -53,52 +91,70 @@ void UEnemyInteractor::PerformAgentAction_Implementation(const ULearningAgentsAc
 {
 	UObject* ActActor = GetAgent(AgentId, AEnemyCharacter::StaticClass());
 
-	if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(ActActor))
+	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(ActActor);
+	if (!Enemy) return;
+
+	AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
+	if (!EnemyAIController) return;
+
+	UBlackboardComponent* BlackboardComp = EnemyAIController->GetBlackboardComponent();
+	if (!BlackboardComp) return;
+
+	TMap<FName, FLearningAgentsActionObjectElement> ActionStructElements;
+	if (!ULearningAgentsActions::GetStructAction(ActionStructElements, InActionObject, InActionObjectElement))
 	{
-		if (AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController()))
-		{
-			TMap<FName, FLearningAgentsActionObjectElement> ActionStructElements;
-			const bool bGotStruct = ULearningAgentsActions::GetStructAction(ActionStructElements, InActionObject, InActionObjectElement);
-
-			if (!bGotStruct)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Failed to get struct action 'Action'"));
-				return;
-			}
-
-			float SearchValue = 0.f;
-			float InvestigateValue = 0.f;
-			float ChaseValue = 0.f;
-
-			const bool bGotSearch = ULearningAgentsActions::GetFloatAction(SearchValue, InActionObject, ActionStructElements[TEXT("Search")], TEXT("Search"));
-
-			const bool bGotInvestigate = ULearningAgentsActions::GetFloatAction(InvestigateValue, InActionObject, ActionStructElements[TEXT("Investigate")], TEXT("Investigate"));
-
-			const bool bGotChase = ULearningAgentsActions::GetFloatAction(ChaseValue, InActionObject, ActionStructElements[TEXT("Chase")], TEXT("Chase"));
-
-			if (!bGotSearch || !bGotInvestigate || !bGotChase)
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Failed to read one or more float actions (Search/Investigate/Chase)"));
-				return;
-			}
-
-
-			// Determine the action with the highest value and set the Enemy's state accordingly
-			if (SearchValue >= InvestigateValue && SearchValue >= ChaseValue)
-			{
-				EnemyAIController->SetCurrentState("Search");
-				UE_LOG(LogTemp, Display, TEXT("Search chosen"));
-			}
-			else if (InvestigateValue >= SearchValue && InvestigateValue >= ChaseValue)
-			{
-				EnemyAIController->SetCurrentState("Investigate");
-				UE_LOG(LogTemp, Display, TEXT("Investigate chosen"));
-			}
-			else if (ChaseValue >= SearchValue && ChaseValue >= InvestigateValue)
-			{
-				EnemyAIController->SetCurrentState("Chase");
-				UE_LOG(LogTemp, Display, TEXT("Chase chosen"));
-			}
-		}
+		UE_LOG(LogTemp, Warning, TEXT("Failed to get struct action."));
+		return;
 	}
+
+	auto GetElem = [&ActionStructElements](const FName Name) -> FLearningAgentsActionObjectElement*
+	{
+		return ActionStructElements.Find(Name);
+	};
+
+
+	FLearningAgentsActionObjectElement* Elem = nullptr;
+	int32 StateIndex = 0;
+	int32 StrategyIndex = 0;
+	float DesiredTension = 0.f;
+	float CurrentTension = 0.f;
+
+	Elem = GetElem(TEXT("CurrentState"));
+	if (!Elem || !ULearningAgentsActions::GetExclusiveDiscreteAction(StateIndex, InActionObject, *Elem, TEXT("CurrentStateAction")))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to read action: CurrentState"));
+		return;
+	}
+
+	Elem = GetElem(TEXT("CurrentStrategy"));
+	if (!Elem || !ULearningAgentsActions::GetExclusiveDiscreteAction(StrategyIndex, InActionObject, *Elem, TEXT("CurrentStrategyAction")))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to read action: CurrentStrategy"));
+		return;
+	}
+
+	Elem = GetElem(TEXT("DesiredTensionLevel"));
+	if (!Elem || !ULearningAgentsActions::GetFloatAction(DesiredTension, InActionObject, *Elem, TEXT("DesiredTensionLevelAction")))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to read action: DesiredTensionLevel"));
+		return;
+	}
+	DesiredTension = FMath::Clamp(DesiredTension, 0.f, 1.f);
+
+	Elem = GetElem(TEXT("CurrentTensionLevel"));
+	if (!Elem || !ULearningAgentsActions::GetFloatAction(CurrentTension, InActionObject, *Elem, TEXT("CurrentTensionLevelAction")))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to read action: CurrentTensionLevel"));
+		return;
+	}
+	CurrentTension = FMath::Clamp(CurrentTension, 0.f, 1.f);
+
+	BlackboardComp->SetValueAsEnum(TEXT("CurrentState"), static_cast<uint8>(StateIndex));
+	BlackboardComp->SetValueAsEnum(TEXT("CurrentStrategy"), static_cast<uint8>(StrategyIndex));
+	BlackboardComp->SetValueAsFloat(TEXT("DesiredTensionLevel"), DesiredTension);
+	BlackboardComp->SetValueAsFloat(TEXT("CurrentTensionLevel"), CurrentTension);
+
+	// Optional debug:
+	UE_LOG(LogTemp, Warning, TEXT("Action Applied | State=%d Strategy=%d DesiredT=%.2f CurrentT=%.2f"),
+		StateIndex, StrategyIndex, DesiredTension, CurrentTension);
 }

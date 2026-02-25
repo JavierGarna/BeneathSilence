@@ -30,6 +30,8 @@ protected:
 private:
 	void GetAllRooms();
 	bool GetRandomLocationInRoom(ARoomVolume* Room, UNavigationSystemV1* NavSys, FNavLocation& OutLocation);
+	UBlackboardComponent* BlackboardComp;
 	TArray<ARoomVolume*> Rooms;
-	ARoomVolume* AssignedRoom;
+	ARoomVolume* TargetRoom;
+	uint8 CurrentStrategy;
 };

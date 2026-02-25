@@ -19,34 +19,22 @@ public:
 
 	// Switch to a specific fixed camera
 	UFUNCTION(BlueprintCallable, Category = "Fixed Camera")
-	void SwitchToFixedCamera(AActor* NewCameraActor, float BlendTime = 0.5f);
+	void SwitchToFixedCamera(AFixedCamera* NewCameraActor, float BlendTime = 0.5f);
 
 	// Get current active camera
 	UFUNCTION(BlueprintPure, Category = "Fixed Camera")
-	AActor* GetCurrentFixedCamera() const { return CurrentFixedCamera; }
+    AFixedCamera* GetCurrentFixedCamera() const { return CurrentFixedCamera; }
 
 protected:
 	virtual void UpdateViewTarget(FTViewTarget& OutVT, float DeltaTime) override;
 
 private:
     UPROPERTY()
-    AActor* CurrentFixedCamera;
+    AFixedCamera* CurrentFixedCamera;
 
     UPROPERTY()
-    AActor* TargetFixedCamera;
+    AFixedCamera* TargetFixedCamera;
 
-    FVector BlendStartLocation;
-    FRotator BlendStartRotation;
-    float BlendStartFOV;
-
-    FVector BlendTargetLocation;
-    FRotator BlendTargetRotation;
-    float BlendTargetFOV;
-
-    float BlendAlpha;
-    float BlendDuration;
-    float BlendTimeElapsed;
-    bool bIsBlending;
-
-    class UCameraComponent* GetCameraComponent(AActor* Actor) const;
+	UFUNCTION()
+    class UCameraComponent* GetCameraComponent(AFixedCamera* Actor) const;
 };

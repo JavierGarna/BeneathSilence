@@ -41,7 +41,7 @@ void ASoundLight::StartSoundWave(const FVector& Origin, float Radius, int RayCou
     UAISense_Hearing::ReportNoiseEvent(
         GetWorld(),
         Origin,
-        Speed,
+        100.f,
         WaveOwner,
         Radius,
         NAME_None

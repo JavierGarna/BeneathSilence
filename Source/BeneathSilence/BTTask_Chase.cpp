@@ -3,8 +3,10 @@
 #include "BTTask_Chase.h"
 #include "PlayerCharacter.h"
 #include "EnemyCharacter.h"
+#include "EnemyAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "RoomVolume.h"
 
 UBTTask_Chase::UBTTask_Chase()
 {
@@ -21,18 +23,21 @@ EBTNodeResult::Type UBTTask_Chase::ExecuteTask(UBehaviorTreeComponent& OwnerComp
 
 	if (Player && Enemy)
 	{
-		// Set the target location in the blackboard
+		AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
+
 		UBlackboardComponent* BlackboardComp = OwnerComponent.GetBlackboardComponent();
 		if (BlackboardComp)
 		{
-			BlackboardComp->SetValueAsObject(GetSelectedBlackboardKey(), Player);
+			BlackboardComp->SetValueAsVector("TargetLocation", Player->GetActorLocation());
 
-			if ((Player->GetActorLocation() - Enemy->GetActorLocation()).Size() <= 200.f)
+			if ((Player->GetActorLocation() - Enemy->GetActorLocation()).Size() <= 50.f)
 			{
 				UGameplayStatics::ApplyDamage(Player, 20.f, Enemy->GetController(), Enemy, UDamageType::StaticClass());
 
-				// Set player caught condition in blackboard to true
-				BlackboardComp->SetValueAsBool("PlayerCaught", true);
+				BlackboardComp->SetValueAsBool("IsPlayerCaught", true);
+				BlackboardComp->SetValueAsVector("LastKnownPlayerLocation", Player->GetActorLocation());
+				BlackboardComp->SetValueAsObject("LastKnownPlayerRoom", Cast<UObject>(EnemyAIController->GetPlayerCurrentRoom()));
+				BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", 0.f);
 			}
 
 			return EBTNodeResult::Succeeded;

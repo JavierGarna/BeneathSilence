@@ -20,4 +20,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComponent, uint8* NodeMemory) override;
+
+private:
+	uint8 CurrentStrategy;
 };

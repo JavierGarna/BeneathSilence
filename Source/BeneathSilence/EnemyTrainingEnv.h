@@ -18,4 +18,8 @@ protected:
 	virtual void GatherAgentReward_Implementation(float& OutReward, const int32 AgentId) override;
 	virtual void GatherAgentCompletion_Implementation(ELearningAgentsCompletion& OutCompletion, const int32 AgentId) override;
 	virtual void ResetAgentEpisodes_Implementation(const TArray<int32>& AgentIds) override;
+
+private:
+	float CatchDistanceThreshold = 100.0f;
+	float MaxUsefulDistance = 3000.0f;
 };

@@ -6,13 +6,7 @@
 #include "LearningAgentsInteractor.h"
 #include "EnemyInteractor.generated.h"
 
-UENUM(BlueprintType)
-enum class EEnemyState : uint8
-{
-    Search      UMETA(DisplayName = "Search"),
-    Investigate UMETA(DisplayName = "Investigate"),
-    Chase       UMETA(DisplayName = "Chase")
-};
+class ARoomVolume;
 
 /**
  * 
@@ -27,4 +21,9 @@ protected:
 	virtual void GatherAgentObservation_Implementation(FLearningAgentsObservationObjectElement& OutObservationObjectElement, ULearningAgentsObservationObject* InObservationObject, const int32 AgentId) override;
 	virtual void SpecifyAgentAction_Implementation(FLearningAgentsActionSchemaElement& OutActionSchemaElement, ULearningAgentsActionSchema* InActionSchema) override;
     virtual void PerformAgentAction_Implementation(const ULearningAgentsActionObject* InActionObject, const FLearningAgentsActionObjectElement& InActionObjectElement, const int32 AgentId) override;
+
+private:
+	TArray<ARoomVolume*> Rooms;
+	TArray<float> StatePriorProbabilities = { 0.25f, 0.25f, 0.25f, 0.25f };
+	TArray<float> StrategyPriorProbabilities = { 0.25f, 0.25f, 0.25f };
 };

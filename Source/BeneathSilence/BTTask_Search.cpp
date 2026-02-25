@@ -2,7 +2,7 @@
 
 
 #include "BTTask_Search.h"
-#include "AIController.h"
+#include "EnemyAIController.h"
 #include "NavigationSystem.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "RoomVolume.h"
@@ -26,24 +26,60 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(AIPawn->GetWorld());
     if (!NavSys) return EBTNodeResult::Failed;
 
-    UBlackboardComponent* BlackboardComp = OwnerComponent.GetBlackboardComponent();
+    BlackboardComp = OwnerComponent.GetBlackboardComponent();
+	if (!BlackboardComp) return EBTNodeResult::Failed;
+
     GetAllRooms();
 
-    for (ARoomVolume* Room : Rooms)
+	CurrentStrategy = BlackboardComp->GetValueAsEnum("CurrentStrategy");
+
+    if (CurrentStrategy == Normal)
     {
-        if (Room->RoomName == BlackboardComp->GetValueAsName(RoomKey.SelectedKeyName))
+        for (ARoomVolume* Room : Rooms)
         {
-			AssignedRoom = Room;
-            break;
+            if (Room->EnemyTimeInRoom <= 10.f)
+            {
+                TargetRoom = Room;
+                break;
+            }
         }
     }
 
-	if (!AssignedRoom) return EBTNodeResult::Failed;
+    if (CurrentStrategy == Aggressive)
+    {
+		ARoomVolume* PlayerCurrentRoom = Cast<ARoomVolume>(BlackboardComp->GetValueAsObject("PlayerCurrentRoom"));
+		// Adjacent rooms are prioritized in aggressive strategy
+        for (ARoomVolume* Room : Rooms)
+        {
+            if (PlayerCurrentRoom && PlayerCurrentRoom->ConnectedRooms.Contains(Room))
+            {
+                TargetRoom = Room;
+                break;
+            }
+        }
+    }
+
+    if (CurrentStrategy == Cautious)
+    {
+        ARoomVolume* PlayerCurrentRoom = Cast<ARoomVolume>(BlackboardComp->GetValueAsObject("PlayerCurrentRoom"));
+        // Non-adjacent rooms are prioritized in aggressive strategy
+        for (ARoomVolume* Room : Rooms)
+        {
+            if (PlayerCurrentRoom && !PlayerCurrentRoom->ConnectedRooms.Contains(Room))
+            {
+                TargetRoom = Room;
+                break;
+            }
+        }
+	}
+
+	if (!TargetRoom) return EBTNodeResult::Failed;
 
     FNavLocation RandomLocation;
-    if (GetRandomLocationInRoom(AssignedRoom, NavSys, RandomLocation))
+    if (GetRandomLocationInRoom(TargetRoom, NavSys, RandomLocation))
     {
         BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), RandomLocation.Location);
+		BlackboardComp->SetValueAsObject("TargetRoom", TargetRoom);
         return EBTNodeResult::Succeeded;
     }
 
