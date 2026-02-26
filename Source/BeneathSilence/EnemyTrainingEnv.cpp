@@ -13,8 +13,6 @@ void UEnemyTrainingEnv::SetupTrainingEnvironment(ULearningAgentsManager*& InMana
 {
 	Super::SetupTrainingEnvironment(InManager);
 
-	// Setup reward and completion functions
-	ULearningAgentsRewards::MakeReward(0.f, 1.f, TEXT("BaseReward"), false, nullptr, -1, FVector::ZeroVector, FLinearColor::Green);
 }
 
 void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const int32 AgentId)
@@ -40,11 +38,11 @@ void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const
 
 	if (LearningData.CurrentState == Search)
 	{
-		OutReward += 0.25f * LearningData.TimeSinceLastStimulus;
+		if (LearningData.TimeSinceLastStimulus) OutReward += 0.25f * FMath::Clamp(LearningData.TimeSinceLastStimulus, 0.0f, 20.0f);
 		
 		if (LearningData.TimeSinceLastSeen < 5.0f)
 		{
-			OutReward += 0.25f * LearningData.TimeSinceLastSeen;
+			OutReward += 0.25f * FMath::Clamp(LearningData.TimeSinceLastSeen, 0.0f, 20.0f);
 		}
 
 		if (LearningData.IsAdjacentToPlayerRoom) 
@@ -54,20 +52,19 @@ void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const
 
 		if (LearningData.CurrentDistanceToPlayer < 1000.0f)
 		{
-			OutReward -= 0.50f;
+			OutReward -= 0.25f;
 		}
 
 	}
-
 	if (LearningData.CurrentState == Investigate)
 	{
-		OutReward += 0.50f * LearningData.LastStimulusStrength;
-		OutReward -= 0.25f * LearningData.TimeSinceLastStimulus;
+		if (LearningData.LastStimulusStrength) OutReward += 0.50f * FMath::Clamp(LearningData.LastStimulusStrength, 0.0f, 1.0f);
+		if (LearningData.TimeSinceLastStimulus) OutReward -= 0.25f * FMath::Clamp(LearningData.TimeSinceLastStimulus, 0.0f, 20.0f);
 
 		// Distance to stimulus
 		const float DistToStimulus = FVector::Dist(Enemy->GetActorLocation(), LearningData.LastStimulusLocation);
 		
-		OutReward -= 0.50f * DistToStimulus;
+		OutReward -= 0.25f * FMath::Clamp(DistToStimulus, 0.0f, 2000.0f);
 		
 	}
 
@@ -75,14 +72,15 @@ void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const
 	{
 		if (LearningData.CurrentDistanceToPlayer < 1000.0f)
 		{
-			OutReward += 0.50f;
+			OutReward += 0.25f;
 		}
 
 		if (LearningData.CurrentDistanceToPlayer < 500.0f)
 		{
-			OutReward += 0.50f;
+			OutReward += 0.25f;
 		}
 	}
+	ULearningAgentsRewards::MakeReward(OutReward, 1.0f, TEXT("EnemyReward"), true, this, AgentId, Enemy->GetActorLocation(), FLinearColor::Red);
 }
 
 void UEnemyTrainingEnv::GatherAgentCompletion_Implementation(ELearningAgentsCompletion& OutCompletion, const int32 AgentId)
@@ -91,7 +89,6 @@ void UEnemyTrainingEnv::GatherAgentCompletion_Implementation(ELearningAgentsComp
 	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(CompletionActor);
 
 	bool bPlayerCaught = false;
-	float TimeSinceLastStimulus = 0.0f;
 	float TimeSinceLastSeen = 0.0f;
 
 	if (Enemy)
