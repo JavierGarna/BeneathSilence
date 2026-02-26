@@ -24,6 +24,6 @@ protected:
 
 private:
 	TArray<ARoomVolume*> Rooms;
-	TArray<float> StatePriorProbabilities = { 0.25f, 0.25f, 0.25f, 0.25f };
-	TArray<float> StrategyPriorProbabilities = { 0.25f, 0.25f, 0.25f };
+	TArray<float> StatePriorProbabilities = { 0.25f, 0.25f, 0.50f };
+	TArray<float> StrategyPriorProbabilities = { 0.50f, 0.25f, 0.25f };
 };

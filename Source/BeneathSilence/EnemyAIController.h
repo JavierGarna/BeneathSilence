@@ -16,7 +16,6 @@ class APlayerCharacter;
 
 enum EEnemyState
 {
-	Idle,
 	Search,
 	Investigate,
 	Chase
@@ -35,7 +34,7 @@ struct FEnemyLearningData
 	GENERATED_BODY()
 
 	UObject* SelfActor = nullptr;
-	uint8 CurrentState = Idle;
+	uint8 CurrentState = Search;
 	uint8 CurrentStrategy = Normal;
 
 	UObject* TargetActor = nullptr;

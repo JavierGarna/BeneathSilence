@@ -9,6 +9,14 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "AIController.h"
 
+void UEnemyTrainingEnv::SetupTrainingEnvironment(ULearningAgentsManager*& InManager)
+{
+	Super::SetupTrainingEnvironment(InManager);
+
+	// Setup reward and completion functions
+	ULearningAgentsRewards::MakeReward(0.f, 1.f, TEXT("BaseReward"), false, nullptr, -1, FVector::ZeroVector, FLinearColor::Green);
+}
+
 void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const int32 AgentId)
 {
 	UObject* RewardActor = GetAgent(AgentId, AEnemyCharacter::StaticClass());
@@ -24,72 +32,56 @@ void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const
 
 	FEnemyLearningData LearningData = EnemyAIController->GetLearningData();
 
-	if (LearningData.CurrentDistanceToPlayer <= CatchDistanceThreshold)
+	if (LearningData.CurrentDistanceToPlayer <= 200.f)
 	{
 		OutReward += 50.f;
 		return;
 	}
 
-	OutReward += 0.25f * FMath::Clamp(LearningData.ConfidenceLevel, 0.0f, 1.0f);
-	OutReward -= 0.35f * (FMath::Clamp(LearningData.TimeSinceLastSeen, 0.0f, 30.0f) / 30.0f);
+	if (LearningData.CurrentState == Search)
+	{
+		OutReward += 0.25f * LearningData.TimeSinceLastStimulus;
+		
+		if (LearningData.TimeSinceLastSeen < 5.0f)
+		{
+			OutReward += 0.25f * LearningData.TimeSinceLastSeen;
+		}
 
-	const float StimulusStrength = FMath::Clamp(LearningData.LastStimulusStrength, 0.0f, 1.0f);
-	const float StimulusTime = FMath::Clamp(LearningData.TimeSinceLastStimulus, 0.0f, 20.0f);
-	const float StimFresh01 = 1.0f - (StimulusTime / 20.0f);
+		if (LearningData.IsAdjacentToPlayerRoom) 
+		{
+			OutReward += 0.25f;
+		}
+
+		if (LearningData.CurrentDistanceToPlayer < 1000.0f)
+		{
+			OutReward -= 0.50f;
+		}
+
+	}
 
 	if (LearningData.CurrentState == Investigate)
 	{
-		OutReward += 0.50f * StimulusStrength * StimFresh01;
-	}
-	else
-	{
-		OutReward -= 0.05f * StimulusStrength * StimFresh01;
-	}
+		OutReward += 0.50f * LearningData.LastStimulusStrength;
+		OutReward -= 0.25f * LearningData.TimeSinceLastStimulus;
 
-	const float Proximity = 1.0f - FMath::Clamp(LearningData.CurrentDistanceToPlayer / MaxUsefulDistance, 0.0f, 1.0f);
+		// Distance to stimulus
+		const float DistToStimulus = FVector::Dist(Enemy->GetActorLocation(), LearningData.LastStimulusLocation);
+		
+		OutReward -= 0.50f * DistToStimulus;
+		
+	}
 
 	if (LearningData.CurrentState == Chase)
 	{
-		OutReward += 1.50f * Proximity;
-
-		const float TargetNear = 1.0f - FMath::Clamp(LearningData.CurrentDistanceToPlayer / 2000.0f, 0.0f, 1.0f);
-		OutReward += 0.35f * TargetNear;
-	}
-	else if (LearningData.CurrentState == Search)
-	{
-		const float DistToLastKnownLocation = FVector::Dist(Enemy->GetActorLocation(), LearningData.LastKnownPlayerLocation);
-		const float NearLastKnownLocation = 1.0f - FMath::Clamp(DistToLastKnownLocation / 2500.0f, 0.0f, 1.0f);
-		OutReward += 0.25f * NearLastKnownLocation;
-
-		if (Proximity > 0.85f)
+		if (LearningData.CurrentDistanceToPlayer < 1000.0f)
 		{
-			OutReward -= 0.80f;
+			OutReward += 0.50f;
 		}
-	}
-	else if (LearningData.CurrentState == Investigate)
-	{
-		const float DistToStimulus = FVector::Dist(Enemy->GetActorLocation(), LearningData.LastStimulusLocation);
-		const float NearStimulus = 1.0f - FMath::Clamp(DistToStimulus / 2000.0f, 0.0f, 1.0f);
-		OutReward += 0.50f * NearStimulus;
 
-		if (Proximity > 0.85f)
+		if (LearningData.CurrentDistanceToPlayer < 500.0f)
 		{
-			OutReward -= 0.80f;
+			OutReward += 0.50f;
 		}
-	}
-	else
-	{
-		OutReward -= 1.0f;
-	}
-
-	const float Desired = FMath::Clamp(LearningData.DesiredTensionLevel, 0.0f, 1.0f);
-	const float Current = FMath::Clamp(LearningData.CurrentTensionLevel, 0.0f, 1.0f);
-	const float TensionError = FMath::Abs(Desired - Current);
-	OutReward += 0.05f * (1.0f - FMath::Clamp(TensionError, 0.0f, 1.0f));
-
-	if (LearningData.TimeSinceLastSeen > 20.0f)
-	{
-		OutReward -= 0.30f;
 	}
 }
 
@@ -112,7 +104,6 @@ void UEnemyTrainingEnv::GatherAgentCompletion_Implementation(ELearningAgentsComp
 			if (BlackboardComp)
 			{
 				bPlayerCaught = BlackboardComp->GetValueAsBool("IsPlayerCaught");
-				TimeSinceLastStimulus = BlackboardComp->GetValueAsFloat("TimeSinceLastStimulus");
 				TimeSinceLastSeen = BlackboardComp->GetValueAsFloat("TimeSinceLastSeen");
 			}
 		}
@@ -136,19 +127,12 @@ void UEnemyTrainingEnv::ResetAgentEpisodes_Implementation(const TArray<int32>& A
 			UBlackboardComponent* BlackboardComp = AIController->GetBlackboardComponent();
 			if (BlackboardComp)
 			{
-				BlackboardComp->SetValueAsObject("SelfActor", Enemy);
-				BlackboardComp->SetValueAsVector("TargetLocation", FVector::ZeroVector);
-				BlackboardComp->SetValueAsInt("TargetRoom", 0);
-				BlackboardComp->SetValueAsVector("LastKnownPlayerLocation", FVector::ZeroVector);
-				BlackboardComp->SetValueAsInt("LastKnownPlayerRoom", 0);
-				BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", 0.0f);
-				BlackboardComp->SetValueAsFloat("ConfidenceLevel", 0.0f);
-				BlackboardComp->SetValueAsFloat("LastStimulusStrength", 0.0f);
-				BlackboardComp->SetValueAsVector("LastStimulusLocation", FVector::ZeroVector);
-				BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", 0.0f);
-				BlackboardComp->SetValueAsFloat("CurrentDistanceToPlayer", 0.0f);
-				BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", false);
 				Enemy->Reset();
+				
+				//Reset relevant blackboard keys
+				BlackboardComp->SetValueAsBool("IsPlayerCaught", false);
+				BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", 0.0f);
+				BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", 0.0f);
 			}
 		}
 	}

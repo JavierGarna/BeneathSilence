@@ -24,7 +24,7 @@ void UEnemyInteractor::SpecifyAgentObservation_Implementation(FLearningAgentsObs
 	TMap<FName, FLearningAgentsObservationSchemaElement> Elements;
 
 	// Sub-elements of the EnemyData struct observation
-	Elements.Add(TEXT("CurrentState"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, 4, TEXT("CurrentStateObservation")));
+	Elements.Add(TEXT("CurrentState"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, 3, TEXT("CurrentStateObservation")));
 	Elements.Add(TEXT("CurrentStrategy"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, 3, TEXT("CurrentStrategyObservation")));
 	
 	Elements.Add(TEXT("LastKnownPlayerLocation"), ULearningAgentsObservations::SpecifyLocationObservation(InObservationSchema, 1.0f, TEXT("LastKnownPlayerLocationObservation")));
@@ -79,10 +79,8 @@ void UEnemyInteractor::SpecifyAgentAction_Implementation(FLearningAgentsActionSc
 {
 	TMap<FName, FLearningAgentsActionSchemaElement> Elements;
 
-	Elements.Add(TEXT("CurrentState"), ULearningAgentsActions::SpecifyExclusiveDiscreteAction(InActionSchema, 4, StatePriorProbabilities, TEXT("CurrentStateAction")));
+	Elements.Add(TEXT("CurrentState"), ULearningAgentsActions::SpecifyExclusiveDiscreteAction(InActionSchema, 3, StatePriorProbabilities, TEXT("CurrentStateAction")));
 	Elements.Add(TEXT("CurrentStrategy"), ULearningAgentsActions::SpecifyExclusiveDiscreteAction(InActionSchema, 3, StrategyPriorProbabilities, TEXT("CurrentStrategyAction")));
-	Elements.Add(TEXT("DesiredTensionLevel"), ULearningAgentsActions::SpecifyFloatAction(InActionSchema, 1.0f, TEXT("DesiredTensionLevelAction")));
-	Elements.Add(TEXT("CurrentTensionLevel"), ULearningAgentsActions::SpecifyFloatAction(InActionSchema, 1.0f, TEXT("CurrentTensionLevelAction")));
 
 	OutActionSchemaElement = ULearningAgentsActions::SpecifyStructAction(InActionSchema, Elements);
 }
@@ -116,8 +114,6 @@ void UEnemyInteractor::PerformAgentAction_Implementation(const ULearningAgentsAc
 	FLearningAgentsActionObjectElement* Elem = nullptr;
 	int32 StateIndex = 0;
 	int32 StrategyIndex = 0;
-	float DesiredTension = 0.f;
-	float CurrentTension = 0.f;
 
 	Elem = GetElem(TEXT("CurrentState"));
 	if (!Elem || !ULearningAgentsActions::GetExclusiveDiscreteAction(StateIndex, InActionObject, *Elem, TEXT("CurrentStateAction")))
@@ -133,28 +129,10 @@ void UEnemyInteractor::PerformAgentAction_Implementation(const ULearningAgentsAc
 		return;
 	}
 
-	Elem = GetElem(TEXT("DesiredTensionLevel"));
-	if (!Elem || !ULearningAgentsActions::GetFloatAction(DesiredTension, InActionObject, *Elem, TEXT("DesiredTensionLevelAction")))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to read action: DesiredTensionLevel"));
-		return;
-	}
-	DesiredTension = FMath::Clamp(DesiredTension, 0.f, 1.f);
-
-	Elem = GetElem(TEXT("CurrentTensionLevel"));
-	if (!Elem || !ULearningAgentsActions::GetFloatAction(CurrentTension, InActionObject, *Elem, TEXT("CurrentTensionLevelAction")))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to read action: CurrentTensionLevel"));
-		return;
-	}
-	CurrentTension = FMath::Clamp(CurrentTension, 0.f, 1.f);
-
 	BlackboardComp->SetValueAsEnum(TEXT("CurrentState"), static_cast<uint8>(StateIndex));
 	BlackboardComp->SetValueAsEnum(TEXT("CurrentStrategy"), static_cast<uint8>(StrategyIndex));
-	BlackboardComp->SetValueAsFloat(TEXT("DesiredTensionLevel"), DesiredTension);
-	BlackboardComp->SetValueAsFloat(TEXT("CurrentTensionLevel"), CurrentTension);
 
 	// Optional debug:
-	UE_LOG(LogTemp, Warning, TEXT("Action Applied | State=%d Strategy=%d DesiredT=%.2f CurrentT=%.2f"),
-		StateIndex, StrategyIndex, DesiredTension, CurrentTension);
+	UE_LOG(LogTemp, Warning, TEXT("Action Applied | State=%d Strategy=%d"),
+		StateIndex, StrategyIndex);
 }
