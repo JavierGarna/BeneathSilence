@@ -32,7 +32,7 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     GetAllRooms();
 
 	CurrentStrategy = BlackboardComp->GetValueAsEnum("CurrentStrategy");
-
+  
     if (CurrentStrategy == Normal)
     {
         for (ARoomVolume* Room : Rooms)
@@ -44,32 +44,73 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
             }
         }
     }
+   
 
-    if (CurrentStrategy == Aggressive)
+	if (CurrentStrategy == Aggressive) // Prioritise adjacent rooms with no recent enemy activity in aggressive strategy
     {
 		ARoomVolume* PlayerCurrentRoom = Cast<ARoomVolume>(BlackboardComp->GetValueAsObject("PlayerCurrentRoom"));
-		// Adjacent rooms are prioritized in aggressive strategy
-        for (ARoomVolume* Room : Rooms)
+
+        if (PlayerCurrentRoom)
         {
-            if (PlayerCurrentRoom && PlayerCurrentRoom->ConnectedRooms.Contains(Room))
+            for (ARoomVolume* Room : PlayerCurrentRoom->ConnectedRooms)
             {
-                UE_LOG(LogTemp, Display, TEXT("%s"), *Room->GetName());
-                TargetRoom = Room;
-                break;
+                if (!IsValid(Room)) continue;
+
+                if (Room->EnemyTimeInRoom < 10.0f)
+                {
+                    TargetRoom = Room;
+                    break; // found a high-priority room
+                }
             }
+
+			if (!TargetRoom)
+            {
+                for (ARoomVolume* Room : PlayerCurrentRoom->ConnectedRooms)
+                {
+                    if (!IsValid(Room)) continue;
+
+                    TargetRoom = Room;
+                    break;
+                }
+            }
+
         }
     }
 
-    if (CurrentStrategy == Cautious)
+	if (CurrentStrategy == Cautious) // Prioritise non-adjacent rooms in cautious strategy
     {
         ARoomVolume* PlayerCurrentRoom = Cast<ARoomVolume>(BlackboardComp->GetValueAsObject("PlayerCurrentRoom"));
-        // Non-adjacent rooms are prioritized in aggressive strategy
-        for (ARoomVolume* Room : Rooms)
+
+        if (PlayerCurrentRoom)
         {
-            if (PlayerCurrentRoom && !PlayerCurrentRoom->ConnectedRooms.Contains(Room))
+            for (AActor* Actor : Rooms)
             {
-                TargetRoom = Room;
-                break;
+				ARoomVolume* Room = Cast<ARoomVolume>(Actor);
+                
+                if (!IsValid(Room)) continue;
+                if (Room == PlayerCurrentRoom) continue;
+                if (PlayerCurrentRoom->ConnectedRooms.Contains(Room)) continue;
+
+                if (Room->EnemyTimeInRoom < 10.0f)
+                {
+                    TargetRoom = Room;
+                    break;
+                }
+			}
+
+            if (!TargetRoom)
+            {
+                for (AActor* Actor : Rooms)
+                {
+                    ARoomVolume* Room = Cast<ARoomVolume>(Actor);
+                    if (!IsValid(Room)) continue;
+
+                    if (Room == PlayerCurrentRoom) continue;
+                    if (PlayerCurrentRoom->ConnectedRooms.Contains(Room)) continue;
+
+                    TargetRoom = Room;
+                    break;
+                }
             }
         }
 	}
