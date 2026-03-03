@@ -17,28 +17,32 @@ EBTNodeResult::Type UBTTask_Chase::ExecuteTask(UBehaviorTreeComponent& OwnerComp
 {
 	Super::ExecuteTask(OwnerComponent, NodeMemory);
 
+	AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(OwnerComponent.GetAIOwner());
+
 	// Get player location
-	APlayerCharacter* Player = GetWorld()->GetFirstPlayerController()->GetPawn<APlayerCharacter>();
-	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+	APlayerCharacter* Player = Cast<APlayerCharacter>(EnemyAIController->GetBlackboardComponent()->GetValueAsObject("PlayerActor"));
+	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(EnemyAIController->GetPawn());
 
 	if (Player && Enemy)
 	{
-		AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
-
 		UBlackboardComponent* BlackboardComp = OwnerComponent.GetBlackboardComponent();
+
 		if (BlackboardComp)
 		{
-			BlackboardComp->SetValueAsVector("TargetLocation", Player->GetActorLocation());
+			// log both locations for debugging
+			UE_LOG(LogTemp, Display, TEXT("Player Location: %s"), *Player->GetActorLocation().ToString());
+			UE_LOG(LogTemp, Display, TEXT("Enemy Location: %s"), *Enemy->GetActorLocation().ToString());
 
-			if ((Player->GetActorLocation() - Enemy->GetActorLocation()).Size() <= 50.f)
+			if (FVector::Dist(Player->GetActorLocation(), Enemy->GetActorLocation()) <= 100.f)
 			{
+				UE_LOG(LogTemp, Display, TEXT("Enemy near player"));
 				UGameplayStatics::ApplyDamage(Player, 20.f, Enemy->GetController(), Enemy, UDamageType::StaticClass());
-
 				BlackboardComp->SetValueAsBool("IsPlayerCaught", true);
-				BlackboardComp->SetValueAsVector("LastKnownPlayerLocation", Player->GetActorLocation());
-				BlackboardComp->SetValueAsObject("LastKnownPlayerRoom", Cast<UObject>(EnemyAIController->GetPlayerCurrentRoom()));
-				BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", 0.f);
 			}
+
+			BlackboardComp->SetValueAsVector("LastKnownPlayerLocation", Player->GetActorLocation());
+			BlackboardComp->SetValueAsObject("LastKnownPlayerRoom", Cast<UObject>(EnemyAIController->GetPlayerCurrentRoom()));
+			BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", 0.f);
 
 			return EBTNodeResult::Succeeded;
 		}

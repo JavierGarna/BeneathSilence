@@ -122,6 +122,7 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     {
         BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), RandomLocation.Location);
 		BlackboardComp->SetValueAsObject("TargetRoom", TargetRoom);
+
         return EBTNodeResult::Succeeded;
     }
 

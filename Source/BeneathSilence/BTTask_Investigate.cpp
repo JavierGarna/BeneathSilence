@@ -20,7 +20,9 @@ EBTNodeResult::Type UBTTask_Investigate::ExecuteTask(UBehaviorTreeComponent& Own
 
 	if (!StimulusLocation.IsZero())
 	{
+		BlackboardComp->ClearValue(StimulusLocationKey.SelectedKeyName);
 		BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), StimulusLocation);
+
 		return EBTNodeResult::Succeeded;
 	}
 

@@ -46,6 +46,20 @@ void APlayerCharacter::BeginPlay()
 	}
 }
 
+float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	PlayerController = Cast<APlayerController>(GetController());
+
+	UE_LOG(LogTemp, Display, TEXT("Hit received"));
+	if (PlayerController)
+	{
+		PlayerController->UnPossess();
+		SetActorEnableCollision(false);
+	}
+
+	return DamageAmount;
+}
+
 // Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
 {
