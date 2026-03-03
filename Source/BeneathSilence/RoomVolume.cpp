@@ -7,6 +7,7 @@
 #include "EnemyCharacter.h"
 #include "EnemyAIController.h"
 #include "Kismet/GameplayStatics.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 ARoomVolume::ARoomVolume()
 {
@@ -42,6 +43,40 @@ void ARoomVolume::HandleBeginOverlap(AActor* OverlappedActor, AActor* OtherActor
     else if (OtherActor->IsA(AEnemyCharacter::StaticClass()))
     {
         if (EnemyAIController) EnemyAIController->SetEnemyCurrentRoom(this);
+    }
+}
+
+void ARoomVolume::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+    
+    // Get EnemyCharacter
+    AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AEnemyCharacter::StaticClass()));
+
+    if (Enemy)
+    {
+		AAIController* AIController = Cast<AAIController>(Enemy->GetController());
+
+        if (AIController)
+        {
+            UBlackboardComponent* BlackboardComp = AIController->GetBlackboardComponent();
+
+            if (BlackboardComp)
+            {
+                UObject* PlayerCurrentRoom = BlackboardComp->GetValueAsObject("PlayerCurrentRoom");
+                if (this == PlayerCurrentRoom)
+                {
+                    PlayerTimeInRoom += DeltaTime;
+                }
+
+				UObject* EnemyCurrentRoom = BlackboardComp->GetValueAsObject("EnemyCurrentRoom");
+
+                if (this == EnemyCurrentRoom)
+                {
+                    EnemyTimeInRoom += DeltaTime;
+                }
+            }
+        }
     }
 }
 

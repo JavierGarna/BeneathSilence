@@ -31,6 +31,22 @@ void AEnemyAIController::BeginPlay()
 		BlackboardComp->SetValueAsObject("PlayerActor", UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 		BlackboardComp->SetValueAsEnum("CurrentState", 0);
 		BlackboardComp->SetValueAsEnum("CurrentStrategy", 0);
+
+		TArray<AActor*> FoundRooms;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomVolume::StaticClass(), FoundRooms);
+
+		for (AActor* Actor : FoundRooms)
+		{
+			if (Actor->GetName() == TEXT("RoomVolume_1"))
+			{
+				BlackboardComp->SetValueAsObject(FName("EnemyCurrentRoom"), Actor);
+			}
+
+			if (Actor->GetName() == TEXT("RoomVolume_14"))
+			{
+				BlackboardComp->SetValueAsObject(FName("PlayerCurrentRoom"), Actor);
+			}
+		}
 	}
 
 	UAIPerceptionComponent* PerceptionComp = GetPerceptionComponent();
@@ -54,11 +70,12 @@ void AEnemyAIController::Tick(float DeltaTime)
 		
 		if (PlayerCurrentRoom)
 		{
+			BlackboardComp->SetValueAsObject("PlayerCurrentRoom", PlayerCurrentRoom);
 			if (PlayerCurrentRoom->ConnectedRooms.Contains(EnemyCurrentRoom)) BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", true);
 			else BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", false);
 		}
 
-		if (EnemyCurrentRoom) EnemyCurrentRoom->EnemyTimeInRoom += DeltaTime;
+		if (EnemyCurrentRoom) BlackboardComp->SetValueAsObject("EnemyCurrentRoom", EnemyCurrentRoom);
 	}
 }
 

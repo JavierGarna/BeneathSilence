@@ -38,7 +38,7 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
         for (ARoomVolume* Room : Rooms)
         {
             if (Room->EnemyTimeInRoom <= 10.f)
-            {
+            {   
                 TargetRoom = Room;
                 break;
             }
@@ -53,6 +53,7 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
         {
             if (PlayerCurrentRoom && PlayerCurrentRoom->ConnectedRooms.Contains(Room))
             {
+                UE_LOG(LogTemp, Display, TEXT("%s"), *Room->GetName());
                 TargetRoom = Room;
                 break;
             }
