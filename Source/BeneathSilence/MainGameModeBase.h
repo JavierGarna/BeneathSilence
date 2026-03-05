@@ -28,15 +28,26 @@ public:
 	UFUNCTION(BlueprintPure)
 	int GetCollectedItems();
 
-private:
-	UFUNCTION()
-	void StartGame();
+	UFUNCTION(BlueprintPure)
+	bool GetHasWon();
+
+	UFUNCTION(BlueprintPure)
+	bool GetHasLost();
+
 	UFUNCTION()
 	void GameOver(bool gameOver);
+
+private:
 
 	UPROPERTY(EditAnywhere)
 	int itemsToCollect = 5;
 
 	UPROPERTY(EditAnywhere)
 	int collectedItems = 0;
+
+	UPROPERTY(EditAnywhere)
+	bool hasWon = false;
+
+	UPROPERTY(EditAnywhere)
+	bool hasLost = false;
 };

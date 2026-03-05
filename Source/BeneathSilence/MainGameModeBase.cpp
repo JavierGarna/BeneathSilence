@@ -36,11 +36,27 @@ int AMainGameModeBase::GetCollectedItems()
 	return collectedItems;
 }
 
-void AMainGameModeBase::StartGame()
+bool AMainGameModeBase::GetHasWon()
 {
+	return hasWon;
+}
+
+bool AMainGameModeBase::GetHasLost()
+{
+	return hasLost;
 }
 
 void AMainGameModeBase::GameOver(bool gameOver)
 {
-	UE_LOG(LogTemp, Display, TEXT("Game Over"));
+	if (gameOver)
+	{
+		hasWon = true;
+	}
+	else
+	{
+		hasLost = true;
+	}
+
+	// Pause the game
+	UGameplayStatics::SetGamePaused(GetWorld(), true);
 }

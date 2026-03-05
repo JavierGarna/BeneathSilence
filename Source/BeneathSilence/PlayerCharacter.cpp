@@ -9,6 +9,7 @@
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "SoundLight.h"
+#include "MainGameModeBase.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -50,11 +51,15 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 {
 	PlayerController = Cast<APlayerController>(GetController());
 
-	UE_LOG(LogTemp, Display, TEXT("Hit received"));
 	if (PlayerController)
 	{
 		PlayerController->UnPossess();
 		SetActorEnableCollision(false);
+		AMainGameModeBase* GameMode = GetWorld() ? Cast<AMainGameModeBase>(GetWorld()->GetAuthGameMode()) : nullptr;
+		if (GameMode)
+		{
+			GameMode->GameOver(false);
+		}
 	}
 
 	return DamageAmount;
