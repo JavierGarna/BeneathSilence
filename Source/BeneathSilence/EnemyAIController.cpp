@@ -148,8 +148,5 @@ void AEnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus St
 		BlackboardComp->SetValueAsVector("LastStimulusLocation", Stimulus.StimulusLocation);
 		BlackboardComp->SetValueAsFloat("LastStimulusStrength", Stimulus.Strength);
 		BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", 0.0f);
-
-		// log all stimulus
-		UE_LOG(LogTemp, Log, TEXT("Heard stimulus from %s at location %s with strength %f"), *Actor->GetName(), *Stimulus.StimulusLocation.ToString(), Stimulus.Strength);
 	}
 }

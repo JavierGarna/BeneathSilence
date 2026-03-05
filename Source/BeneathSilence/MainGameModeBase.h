@@ -6,6 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "MainGameModeBase.generated.h"
 
+class UUserWidget;
+
 /**
  * 
  */
@@ -16,4 +18,25 @@ class BENEATHSILENCE_API AMainGameModeBase : public AGameModeBase
 	
 public:
 	AMainGameModeBase();
+
+	UFUNCTION()
+	void CollectItem();
+
+	UFUNCTION(BlueprintPure)
+	int GetItemsToCollect();
+
+	UFUNCTION(BlueprintPure)
+	int GetCollectedItems();
+
+private:
+	UFUNCTION()
+	void StartGame();
+	UFUNCTION()
+	void GameOver(bool gameOver);
+
+	UPROPERTY(EditAnywhere)
+	int itemsToCollect = 5;
+
+	UPROPERTY(EditAnywhere)
+	int collectedItems = 0;
 };
