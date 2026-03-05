@@ -58,5 +58,5 @@ void AMainGameModeBase::GameOver(bool gameOver)
 	}
 
 	// Pause the game
-	UGameplayStatics::SetGamePaused(GetWorld(), true);
+	//UGameplayStatics::SetGamePaused(GetWorld(), true);
 }

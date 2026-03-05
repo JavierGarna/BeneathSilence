@@ -29,13 +29,8 @@ EBTNodeResult::Type UBTTask_Chase::ExecuteTask(UBehaviorTreeComponent& OwnerComp
 
 		if (BlackboardComp)
 		{
-			// log both locations for debugging
-			UE_LOG(LogTemp, Display, TEXT("Player Location: %s"), *Player->GetActorLocation().ToString());
-			UE_LOG(LogTemp, Display, TEXT("Enemy Location: %s"), *Enemy->GetActorLocation().ToString());
-
 			if (FVector::Dist(Player->GetActorLocation(), Enemy->GetActorLocation()) <= 100.f)
 			{
-				UE_LOG(LogTemp, Display, TEXT("Enemy near player"));
 				UGameplayStatics::ApplyDamage(Player, 20.f, Enemy->GetController(), Enemy, UDamageType::StaticClass());
 				BlackboardComp->SetValueAsBool("IsPlayerCaught", true);
 			}

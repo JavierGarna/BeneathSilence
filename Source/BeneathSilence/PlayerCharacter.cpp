@@ -53,8 +53,6 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 
 	if (PlayerController)
 	{
-		PlayerController->UnPossess();
-		SetActorEnableCollision(false);
 		AMainGameModeBase* GameMode = GetWorld() ? Cast<AMainGameModeBase>(GetWorld()->GetAuthGameMode()) : nullptr;
 		if (GameMode)
 		{
@@ -62,7 +60,7 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 		}
 	}
 
-	return DamageAmount;
+	return 0;
 }
 
 // Called every frame

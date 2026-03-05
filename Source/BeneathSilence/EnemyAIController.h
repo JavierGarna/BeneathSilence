@@ -49,6 +49,7 @@ struct FEnemyLearningData
 	float LastStimulusStrength = 0.0f;
 	FVector LastStimulusLocation = FVector::ZeroVector;
 	float TimeSinceLastStimulus = 9999.0f;
+	bool HasHeardPlayer = false;
 
 	float CurrentDistanceToPlayer = 0.0f;
 	bool IsAdjacentToPlayerRoom = false;
@@ -99,6 +100,9 @@ private:
 	TArray<float> EnemyTimeInRooms;
 	UPROPERTY(EditAnywhere)
 	TArray<float> PlayerTimeInRooms;
+
+	UPROPERTY()
+	int HasHeardPlayerTimer = 0;
 
 	UFUNCTION()
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);

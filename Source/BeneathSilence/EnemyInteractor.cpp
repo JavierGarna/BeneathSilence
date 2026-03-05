@@ -35,6 +35,7 @@ void UEnemyInteractor::SpecifyAgentObservation_Implementation(FLearningAgentsObs
 	Elements.Add(TEXT("LastStimulusStrength"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("LastStimulusStrengthObservation")));
 	Elements.Add(TEXT("LastStimulusLocation"), ULearningAgentsObservations::SpecifyLocationObservation(InObservationSchema, 1.0f, TEXT("LastStimulusLocationObservation")));
 	Elements.Add(TEXT("TimeSinceLastStimulus"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("TimeSinceLastStimulusObservation")));
+	Elements.Add(TEXT("HasHeardPlayer"), ULearningAgentsObservations::SpecifyBoolObservation(InObservationSchema, TEXT("HasHeardPlayerObservation")));
 
 	Elements.Add(TEXT("CurrentDistanceToPlayer"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("CurrentDistanceToPlayerObservation")));
 	Elements.Add(TEXT("IsAdjacentToPlayerRoom"), ULearningAgentsObservations::SpecifyBoolObservation(InObservationSchema, TEXT("IsAdjacentToPlayerRoomObservation")));
@@ -67,6 +68,7 @@ void UEnemyInteractor::GatherAgentObservation_Implementation(FLearningAgentsObse
 		Elements.Add(TEXT("LastStimulusStrength"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.LastStimulusStrength, TEXT("LastStimulusStrengthObservation")));
 		Elements.Add(TEXT("LastStimulusLocation"), ULearningAgentsObservations::MakeLocationObservation(InObservationObject, LearningData.LastStimulusLocation, FTransform(), TEXT("LastStimulusLocationObservation")));
 		Elements.Add(TEXT("TimeSinceLastStimulus"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.TimeSinceLastStimulus, TEXT("TimeSinceLastStimulusObservation")));
+		Elements.Add(TEXT("HasHeardPlayer"), ULearningAgentsObservations::MakeBoolObservation(InObservationObject, LearningData.HasHeardPlayer, TEXT("HasHeardPlayerObservation")));
 
 		Elements.Add(TEXT("CurrentDistanceToPlayer"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.CurrentDistanceToPlayer, TEXT("CurrentDistanceToPlayerObservation")));
 		Elements.Add(TEXT("IsAdjacentToPlayerRoom"), ULearningAgentsObservations::MakeBoolObservation(InObservationObject, LearningData.IsAdjacentToPlayerRoom , TEXT("IsAdjacentToPlayerRoomObservation")));
@@ -101,7 +103,6 @@ void UEnemyInteractor::PerformAgentAction_Implementation(const ULearningAgentsAc
 	TMap<FName, FLearningAgentsActionObjectElement> ActionStructElements;
 	if (!ULearningAgentsActions::GetStructAction(ActionStructElements, InActionObject, InActionObjectElement))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to get struct action."));
 		return;
 	}
 
@@ -118,21 +119,20 @@ void UEnemyInteractor::PerformAgentAction_Implementation(const ULearningAgentsAc
 	Elem = GetElem(TEXT("CurrentState"));
 	if (!Elem || !ULearningAgentsActions::GetExclusiveDiscreteAction(StateIndex, InActionObject, *Elem, TEXT("CurrentStateAction")))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to read action: CurrentState"));
 		return;
 	}
 
 	Elem = GetElem(TEXT("CurrentStrategy"));
 	if (!Elem || !ULearningAgentsActions::GetExclusiveDiscreteAction(StrategyIndex, InActionObject, *Elem, TEXT("CurrentStrategyAction")))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to read action: CurrentStrategy"));
 		return;
+	}
+
+	if (BlackboardComp->GetValueAsBool("HasHeardPlayer"))
+	{
+		StateIndex = 2;
 	}
 
 	BlackboardComp->SetValueAsEnum(TEXT("CurrentState"), static_cast<uint8>(StateIndex));
 	BlackboardComp->SetValueAsEnum(TEXT("CurrentStrategy"), static_cast<uint8>(StrategyIndex));
-
-	// Optional debug:
-	UE_LOG(LogTemp, Warning, TEXT("Action Applied | State=%d Strategy=%d"),
-		StateIndex, StrategyIndex);
 }

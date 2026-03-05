@@ -5,6 +5,9 @@
 #include "ResidualDecal.h"
 #include "Perception/AISense_Hearing.h"
 #include "Kismet/GameplayStatics.h"
+#include "EnemyCharacter.h"
+#include "EnemyAIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 // Sets default values
 ASoundLight::ASoundLight()
@@ -46,6 +49,8 @@ void ASoundLight::StartSoundWave(const FVector& Origin, float Radius, int RayCou
         Radius,
         NAME_None
     );
+
+    WaveOwnerActor = WaveOwner;
 
 	// Create a new sound wave instance
 	FSoundWaveInstance& Wave = ActiveWaves.AddDefaulted_GetRef(); // Adds new defaulted instance and returns a reference
@@ -119,12 +124,13 @@ void ASoundLight::AnimateCurrentWave(const FVector& StartPoint, float Radius, in
         FCollisionQueryParams Params;
         Params.bTraceComplex = false;
         Params.AddIgnoredActor(this);
+		Params.AddIgnoredActor(WaveOwnerActor);
 
         bool bHit = World->LineTraceSingleByChannel(
             Hit, 
             StartPoint,
             EndPoint,
-            ECC_Visibility,
+            ECC_Pawn,
             Params
         );
 
@@ -137,6 +143,17 @@ void ASoundLight::AnimateCurrentWave(const FVector& StartPoint, float Radius, in
                 Hit.ImpactPoint,
                 DecalRotation
 			);
+
+            AActor* HitActor = Hit.GetActor();
+            if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(HitActor))
+            {
+                // Get Enemy Controller and make it aware of the noise
+                if (AEnemyAIController* EnemyController = Cast<AEnemyAIController>(Enemy->GetController()))
+                {
+					EnemyController->GetBlackboardComponent()->SetValueAsBool("HasHeardPlayer", true);
+				}
+			}
+            
         }
     }
 }

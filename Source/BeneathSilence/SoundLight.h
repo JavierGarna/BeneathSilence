@@ -58,4 +58,6 @@ private:
 	void TickWave(int WaveID);
 	UFUNCTION()
 	void AnimateCurrentWave(const FVector& StartPoint, float Radius, int RayCount, float VerticalAngle);
+
+	AActor* WaveOwnerActor = nullptr;
 };

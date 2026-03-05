@@ -76,6 +76,16 @@ void AEnemyAIController::Tick(float DeltaTime)
 		}
 
 		if (EnemyCurrentRoom) BlackboardComp->SetValueAsObject("EnemyCurrentRoom", EnemyCurrentRoom);
+
+		if (BlackboardComp->GetValueAsBool("HasHeardPlayer"))
+		{
+			HasHeardPlayerTimer += DeltaTime;
+			if (HasHeardPlayerTimer >= FMath::FRandRange(5.f, 10.f))
+			{
+				BlackboardComp->SetValueAsBool("HasHeardPlayer", false);
+				HasHeardPlayerTimer = 0;
+			}
+		}
 	}
 }
 
@@ -99,6 +109,7 @@ FEnemyLearningData AEnemyAIController::GetLearningData()
 	LearningData.LastStimulusStrength = GetBlackboardComponent()->GetValueAsFloat("LastStimulusStrength");
 	LearningData.LastStimulusLocation = GetBlackboardComponent()->GetValueAsVector("LastStimulusLocation");
 	LearningData.TimeSinceLastStimulus = GetBlackboardComponent()->GetValueAsFloat("TimeSinceLastStimulus");
+	LearningData.HasHeardPlayer = GetBlackboardComponent()->GetValueAsBool("HasHeardPlayer");
 
 	LearningData.CurrentDistanceToPlayer = GetBlackboardComponent()->GetValueAsFloat("CurrentDistanceToPlayer");
 	LearningData.IsAdjacentToPlayerRoom = GetBlackboardComponent()->GetValueAsBool("IsAdjacentToPlayerRoom");
