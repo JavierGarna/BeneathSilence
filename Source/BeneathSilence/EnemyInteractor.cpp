@@ -128,6 +128,11 @@ void UEnemyInteractor::PerformAgentAction_Implementation(const ULearningAgentsAc
 		return;
 	}
 
+	if (StateIndex == 2)
+	{
+		StateIndex = 0;
+	}
+
 	if (BlackboardComp->GetValueAsBool("HasHeardPlayer"))
 	{
 		StateIndex = 2;

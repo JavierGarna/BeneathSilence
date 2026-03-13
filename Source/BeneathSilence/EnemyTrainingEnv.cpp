@@ -80,6 +80,7 @@ void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const
 			OutReward += 0.25f;
 		}
 	}
+
 	ULearningAgentsRewards::MakeReward(OutReward, 1.0f, TEXT("EnemyReward"), true, this, AgentId, Enemy->GetActorLocation(), FLinearColor::Red);
 }
 
@@ -106,9 +107,8 @@ void UEnemyTrainingEnv::GatherAgentCompletion_Implementation(ELearningAgentsComp
 		}
 	}
 
-	OutCompletion = ULearningAgentsCompletions::MakeCompletionOnCondition(bPlayerCaught, ELearningAgentsCompletion::Termination);
 	OutCompletion = ULearningAgentsCompletions::MakeCompletionOnTimeElapsed(TimeSinceLastSeen, 60.f, ELearningAgentsCompletion::Termination);
-
+	if (bPlayerCaught) OutCompletion = ULearningAgentsCompletions::MakeCompletionOnCondition(bPlayerCaught, ELearningAgentsCompletion::Termination);
 }
 
 void UEnemyTrainingEnv::ResetAgentEpisodes_Implementation(const TArray<int32>& AgentIds)

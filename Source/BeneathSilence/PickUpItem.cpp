@@ -3,6 +3,7 @@
 
 #include "PickUpItem.h"
 #include "MainGameModeBase.h"
+#include "PlayerCharacter.h"
 
 // Sets default values
 APickUpItem::APickUpItem()
@@ -31,10 +32,14 @@ void APickUpItem::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActo
 	AMainGameModeBase* GameMode = GetWorld() ? Cast<AMainGameModeBase>(GetWorld()->GetAuthGameMode()) : nullptr;
 	if (GameMode)
 	{
-		GameMode->CollectItem();
+		APlayerCharacter* Player = Cast<APlayerCharacter>(OtherActor);
+		// if overlapping actor is player, collect item
+		if (Player)
+		{
+			GameMode->CollectItem();
+			Destroy();
+		}
 	}
-
-	Destroy();
 }
 
 // Called every frame
