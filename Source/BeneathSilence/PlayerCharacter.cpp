@@ -150,7 +150,7 @@ void APlayerCharacter::HandleFootstep(FName InSocketLocation)
 		SoundLightActor->StartSoundWave(
 			FootLocation,
 			1200.f,
-			32,
+			16,
 			0.04f,
 			this
 		);
@@ -161,7 +161,7 @@ void APlayerCharacter::HandleFootstep(FName InSocketLocation)
 		SoundLightActor->StartSoundWave(
 			FootLocation,
 			800.f,
-			32,
+			16,
 			0.06f,
 			this
 		);
