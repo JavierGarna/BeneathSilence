@@ -5,7 +5,6 @@
 #include "MainPlayerController.h"
 #include "PlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
-#include "Blueprint/UserWidget.h"
 
 AMainGameModeBase::AMainGameModeBase()
 {

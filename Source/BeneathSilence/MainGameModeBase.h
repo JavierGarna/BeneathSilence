@@ -6,8 +6,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "MainGameModeBase.generated.h"
 
-class UUserWidget;
-
 /**
  * 
  */
