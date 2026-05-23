@@ -13,7 +13,7 @@ AFixedCamera::AFixedCamera()
 	RootComponent = CameraComponent;
 	CameraComponent->bUsePawnControlRotation = false;
 
-	BlendTime = 0.5f;
+	BlendTime = 0.0f;
 }
 
 // Called when the game starts or when spawned
