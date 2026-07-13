@@ -21,6 +21,6 @@ public:
 	void RemoveScan(int ScanID);
 	
 private:
-	static constexpr int MAXSCANS = 6;
-	int Scans[MAXSCANS] = { -1, -1, -1, -1, -1, -1 };
+	static constexpr int MAXSCANS = 20;
+	int Scans[MAXSCANS] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 };
