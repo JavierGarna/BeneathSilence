@@ -20,6 +20,9 @@ public:
 	UFUNCTION()
 	void CollectItem();
 
+	UFUNCTION(BlueprintCallable)
+	void WinGame();
+
 	UFUNCTION(BlueprintPure)
 	int GetItemsToCollect();
 

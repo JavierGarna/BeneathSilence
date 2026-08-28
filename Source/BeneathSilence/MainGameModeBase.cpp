@@ -25,6 +25,11 @@ void AMainGameModeBase::CollectItem()
 	}
 }
 
+void AMainGameModeBase::WinGame()
+{
+	GameOver(true);
+}
+
 int AMainGameModeBase::GetItemsToCollect()
 {
 	return itemsToCollect;
