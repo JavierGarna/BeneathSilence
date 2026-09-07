@@ -87,7 +87,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	// Cast to UEnhancedInputComponent and bind input actions to handler functions
 	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	EIC->BindAction(MoveForwardsAction, ETriggerEvent::Triggered, this, &APlayerCharacter::MoveForwardsHandler);
+	EIC->BindAction(MoveForwardsAction, ETriggerEvent::Completed, this, &APlayerCharacter::MoveForwardsHandler);
 	EIC->BindAction(StrafeAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StrafeHandler);
+	EIC->BindAction(StrafeAction, ETriggerEvent::Completed, this, &APlayerCharacter::StrafeHandler);
 	EIC->BindAction(RunAction, ETriggerEvent::Started, this, &APlayerCharacter::StartRun);
 	EIC->BindAction(RunAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopRun);
 }
@@ -95,39 +97,47 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 void APlayerCharacter::MoveForwardsHandler(const FInputActionValue& Value)
 {
 	const float InputValue = Value.Get<float>();
-	if (InputValue == 0.0f)
-		return;
-
-	// Get camera forward direction (projected on ground plane)
+	
+	ForwardInputValue = InputValue;
 	APlayerController* PC = Cast<APlayerController>(GetController());
+
 	if (PC && PC->PlayerCameraManager)
 	{
-		FRotator CameraRotation = PC->PlayerCameraManager->GetCameraRotation();
-
-		// Only use Yaw, ignore pitch/roll to keep movement on ground
-		FRotator YawRotation(0.0f, CameraRotation.Yaw, 0.0f);
-		FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-
-		AddMovementInput(ForwardDirection, InputValue);
+		const FRotator CameraRotation = PC->PlayerCameraManager->GetCameraRotation();
+		MoveForward(InputValue, CameraRotation.Yaw);
 	}
 }
 
 void APlayerCharacter::StrafeHandler(const FInputActionValue& Value)
 {
 	const float InputValue = Value.Get<float>();
-	if (InputValue == 0.0f)
-		return;
 
-	// Get camera right direction (projected on ground plane)
+	StrafeInputValue = InputValue;
 	APlayerController* PC = Cast<APlayerController>(GetController());
+
 	if (PC && PC->PlayerCameraManager)
 	{
-		FRotator CameraRotation = PC->PlayerCameraManager->GetCameraRotation();
-		FRotator YawRotation(0.0f, CameraRotation.Yaw, 0.0f);
-		FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		AddMovementInput(RightDirection, InputValue);
+		const FRotator CameraRotation = PC->PlayerCameraManager->GetCameraRotation();
+		Strafe(InputValue, CameraRotation.Yaw);
 	}
+}
+
+void APlayerCharacter::MoveForward(float InputValue, float ReferenceYaw)
+{
+	const FRotator YawRotation(0.0f, ReferenceYaw, 0.0f);
+
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+
+	AddMovementInput(ForwardDirection, InputValue);
+}
+
+void APlayerCharacter::Strafe(float InputValue, float ReferenceYaw)
+{
+	const FRotator YawRotation(0.0f, ReferenceYaw, 0.0f);
+
+	FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+	AddMovementInput(RightDirection, InputValue);
 }
 
 void APlayerCharacter::StartRun()
