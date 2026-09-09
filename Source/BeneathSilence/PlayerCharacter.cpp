@@ -77,6 +77,24 @@ void APlayerCharacter::Tick(float DeltaTime)
 		GetCharacterMovement()->MaxWalkSpeed = 300.0f; // Walking speed
 	}
 
+	if (bRunInference)
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+
+		if (PC && PC->PlayerCameraManager)
+		{
+			const FRotator CameraRotation = PC->PlayerCameraManager->GetCameraRotation();
+
+			const FRotator YawRotation(0.0f, CameraRotation.Yaw, 0.0f);
+
+			const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+
+			const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+			AddMovementInput(ForwardDirection, AgentForwardInput);
+			AddMovementInput(RightDirection, AgentStrafeInput);
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -98,6 +116,7 @@ void APlayerCharacter::MoveForwardsHandler(const FInputActionValue& Value)
 {
 	const float InputValue = Value.Get<float>();
 	
+	PreviousForwardInputValue = ForwardInputValue;
 	ForwardInputValue = InputValue;
 	APlayerController* PC = Cast<APlayerController>(GetController());
 
@@ -112,6 +131,7 @@ void APlayerCharacter::StrafeHandler(const FInputActionValue& Value)
 {
 	const float InputValue = Value.Get<float>();
 
+	PreviousStrafeInputValue = StrafeInputValue;
 	StrafeInputValue = InputValue;
 	APlayerController* PC = Cast<APlayerController>(GetController());
 
@@ -128,6 +148,7 @@ void APlayerCharacter::MoveForward(float InputValue, float ReferenceYaw)
 
 	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 
+	UE_LOG(LogTemp, Log, TEXT("MoveForward: InputValue = %f, ReferenceYaw = %f"), InputValue, ReferenceYaw);
 	AddMovementInput(ForwardDirection, InputValue);
 }
 
@@ -137,6 +158,7 @@ void APlayerCharacter::Strafe(float InputValue, float ReferenceYaw)
 
 	FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
+	UE_LOG(LogTemp, Log, TEXT("Strafe: InputValue = %f, ReferenceYaw = %f"), InputValue, ReferenceYaw);
 	AddMovementInput(RightDirection, InputValue);
 }
 

@@ -35,9 +35,18 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	float GetForwardInputValue() const { return ForwardInputValue; }
+	float GetPreviousForwardInputValue() const { return PreviousForwardInputValue; }
 	float GetStrafeInputValue() const { return StrafeInputValue; }
+	float GetPreviousStrafeInputValue() const { return PreviousStrafeInputValue; }
+	float SetPreviousForwardInputValue(float Value) { PreviousForwardInputValue = Value; return PreviousForwardInputValue; }
+	float SetPreviousStrafeInputValue(float Value) { PreviousStrafeInputValue = Value; return PreviousStrafeInputValue; }
 	void MoveForward(float InputValue, float ReferenceYaw);
 	void Strafe(float InputValue, float ReferenceYaw);
+
+	UPROPERTY(EditAnywhere)
+	float AgentForwardInput = 0.0f;
+	UPROPERTY(EditAnywhere)
+	float AgentStrafeInput = 0.0f;
 
 private:
 	UPROPERTY(EditAnywhere)
@@ -48,6 +57,8 @@ private:
 	ASoundLight* SoundLightActor;
 	UPROPERTY()
 	bool bIsRunning = false;
+	UPROPERTY(EditAnywhere)
+	bool bRunInference = false;
 
 	// Input actions
 	UPROPERTY(EditAnywhere)
@@ -61,6 +72,10 @@ private:
 	float ForwardInputValue = 0.0f;
 	UPROPERTY(EditAnywhere)
 	float StrafeInputValue = 0.0f;
+	UPROPERTY(EditAnywhere)
+	float PreviousForwardInputValue = 0.0f;
+	UPROPERTY(EditAnywhere)
+	float PreviousStrafeInputValue = 0.0f;
 
 	// Handler declarations
 	void MoveForwardsHandler(const FInputActionValue& Value);

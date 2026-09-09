@@ -20,4 +20,9 @@ protected:
 	virtual void SpecifyAgentAction_Implementation(FLearningAgentsActionSchemaElement& OutActionSchemaElement, ULearningAgentsActionSchema* InActionSchema) override;
 	virtual void PerformAgentAction_Implementation(const ULearningAgentsActionObject* InActionObject, const FLearningAgentsActionObjectElement& InActionObjectElement, const int32 AgentId) override;
 	
+private:
+	float QuantizeInput(float value);
+	float GetObstacleDistance(AActor* Actor, float AngleDegrees, float TraceLength) const;
+	float ForwardInputValue = 0.0f;
+	float StrafeInputValue = 0.0f;
 };
