@@ -19,7 +19,7 @@ void AEnemyCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	TArray<AActor*> LearningAgentsManagers;
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("LearningAgentsManager"), LearningAgentsManagers);
+	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("EnemyRLManager"), LearningAgentsManagers);
 
 	for (AActor* Actor : LearningAgentsManagers)
 	{
@@ -35,7 +35,7 @@ void AEnemyCharacter::BeginPlay()
 
 	if (!bManagerFound)
 	{
-		UE_LOG(LogTemp, Error, TEXT("LearningAgentsManager not found."));
+		UE_LOG(LogTemp, Error, TEXT("EnemyRLManager not found."));
 	}
 }
 

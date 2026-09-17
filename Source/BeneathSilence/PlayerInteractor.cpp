@@ -34,10 +34,6 @@ void UPlayerInteractor::GatherAgentObservation_Implementation(FLearningAgentsObs
 	const float RelativeYawSin = FMath::Sin(RelativeYawRadians);
 	const float RelativeYawCos = FMath::Cos(RelativeYawRadians);
 
-	// Log previous and current forward and strafe input values
-	UE_LOG(LogTemp, Log, TEXT("PreviousForwardInputValue: %f, PreviousStrafeInputValue: %f"), PlayerAI->GetPreviousForwardInputValue(), PlayerAI->GetPreviousStrafeInputValue());
-	UE_LOG(LogTemp, Log, TEXT("CurrentForwardInputValue: %f, CurrentStrafeInputValue: %f"), PlayerAI->GetForwardInputValue(), PlayerAI->GetStrafeInputValue());
-
 	const float FrontDistance = GetObstacleDistance(PlayerAI, 0.0f, 500.0f);
 	const float LeftDistance = GetObstacleDistance(PlayerAI, -45.0f, 500.0f);
 	const float RightDistance = GetObstacleDistance(PlayerAI, 45.0f, 500.0f);
@@ -99,9 +95,6 @@ void UPlayerInteractor::PerformAgentAction_Implementation(const ULearningAgentsA
 
 	ForwardInputValue = QuantizeInput(ForwardInputValue);
 	StrafeInputValue = QuantizeInput(StrafeInputValue);
-
-	// Log forward and strafe values
-	UE_LOG(LogTemp, Log, TEXT("ForwardInputValue: %f, StrafeInputValue: %f"), ForwardInputValue, StrafeInputValue);
 
 	PlayerAI->AgentForwardInput = ForwardInputValue;
 	PlayerAI->AgentStrafeInput = StrafeInputValue;

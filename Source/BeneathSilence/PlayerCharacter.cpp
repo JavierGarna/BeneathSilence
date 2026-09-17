@@ -148,7 +148,6 @@ void APlayerCharacter::MoveForward(float InputValue, float ReferenceYaw)
 
 	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 
-	UE_LOG(LogTemp, Log, TEXT("MoveForward: InputValue = %f, ReferenceYaw = %f"), InputValue, ReferenceYaw);
 	AddMovementInput(ForwardDirection, InputValue);
 }
 
@@ -158,7 +157,6 @@ void APlayerCharacter::Strafe(float InputValue, float ReferenceYaw)
 
 	FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-	UE_LOG(LogTemp, Log, TEXT("Strafe: InputValue = %f, ReferenceYaw = %f"), InputValue, ReferenceYaw);
 	AddMovementInput(RightDirection, InputValue);
 }
 

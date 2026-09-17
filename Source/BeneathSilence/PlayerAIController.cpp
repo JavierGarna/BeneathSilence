@@ -17,9 +17,6 @@ void UPlayerAIController::EvaluateAgentController_Implementation(FLearningAgents
 
 	float ForwardInput = PlayerCharacter->GetForwardInputValue();
 	float StrafeInput = PlayerCharacter->GetStrafeInputValue();
-
-	// Print forward and strafe input values to the log for debugging
-	UE_LOG(LogTemp, Log, TEXT("ForwardInput: %f, StrafeInput: %f"), ForwardInput, StrafeInput);
 	
 	const FLearningAgentsActionObjectElement ForwardAction = ULearningAgentsActions::MakeFloatAction(InActionObject, ForwardInput, TEXT("ForwardInputValueAction"));
 	const FLearningAgentsActionObjectElement StrafeAction = ULearningAgentsActions::MakeFloatAction(InActionObject, StrafeInput, TEXT("StrafeInputValueAction"));

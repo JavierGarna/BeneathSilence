@@ -38,6 +38,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	float EnemyTimeInRoom = 0.f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsLocked = false;
+
 protected:
 	UFUNCTION()
 	void HandleBeginOverlap(AActor* OverlappedActor, AActor* OtherActor);

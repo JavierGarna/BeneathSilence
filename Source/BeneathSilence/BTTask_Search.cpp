@@ -18,34 +18,84 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     Super::ExecuteTask(OwnerComponent, NodeMemory);
 
     AAIController* AIController = OwnerComponent.GetAIOwner();
-    if (!AIController) return EBTNodeResult::Failed;
+    if (!AIController)
+    {
+		UE_LOG(LogTemp, Warning, TEXT("AIController is null in UBTTask_Search::ExecuteTask"));
+        return EBTNodeResult::Failed;
+    }
 
     APawn* AIPawn = AIController->GetPawn();
-    if (!AIPawn) return EBTNodeResult::Failed;
+    if (!AIPawn)
+    {
+		UE_LOG(LogTemp, Warning, TEXT("AIPawn is null in UBTTask_Search::ExecuteTask"));
+        return EBTNodeResult::Failed;
+    }
 
     UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(AIPawn->GetWorld());
-    if (!NavSys) return EBTNodeResult::Failed;
+    if (!NavSys)
+    {
+		UE_LOG(LogTemp, Warning, TEXT("Navigation System is null in UBTTask_Search::ExecuteTask"));
+        return EBTNodeResult::Failed;
+    }
 
     BlackboardComp = OwnerComponent.GetBlackboardComponent();
-	if (!BlackboardComp) return EBTNodeResult::Failed;
+    if (!BlackboardComp)
+    {
+		UE_LOG(LogTemp, Warning, TEXT("BlackboardComp is null in UBTTask_Search::ExecuteTask"));
+        return EBTNodeResult::Failed;
+    }
 
     GetAllRooms();
 
 	CurrentStrategy = BlackboardComp->GetValueAsEnum("CurrentStrategy");
+	CurrentRoom = Cast<ARoomVolume>(BlackboardComp->GetValueAsObject("EnemyCurrentRoom"));
   
     if (CurrentStrategy == Normal)
     {
-        for (ARoomVolume* Room : Rooms)
+		bool bFoundCurrentRoom = false;
+
+        if (CurrentRoom->EnemyTimeInRoom >= 20.f)
         {
-            if (Room->EnemyTimeInRoom <= 10.f)
-            {   
-                TargetRoom = Room;
-                break;
+			for (ARoomVolume* AdjacentRoom : CurrentRoom->ConnectedRooms)
+			{
+				if (!IsValid(AdjacentRoom)) continue;
+                if (AdjacentRoom->bIsLocked) continue;
+
+				if (AdjacentRoom->EnemyTimeInRoom < 20.0f)
+				{
+					CurrentRoom = AdjacentRoom;
+					bFoundCurrentRoom = true;
+					break;
+				}
+			}
+
+            while (!bFoundCurrentRoom)
+            {
+                for (ARoomVolume* Room : Rooms)
+                {
+                    if (!IsValid(Room)) continue;
+					if (Room->bIsLocked) continue;
+
+                    if (Room->EnemyTimeInRoom < 10.0f)
+                    {
+                        CurrentRoom = Room;
+                        bFoundCurrentRoom = true;
+                        break;
+                    }
+                }
+
+				if (!bFoundCurrentRoom)
+				{
+					for (ARoomVolume* Room : Rooms)
+					{
+						Room->EnemyTimeInRoom = 0.0f; // Reset enemy time for all rooms
+					}
+				}
             }
         }
     }
    
-
+    /*
 	if (CurrentStrategy == Aggressive) // Prioritise adjacent rooms with no recent enemy activity in aggressive strategy
     {
 		ARoomVolume* PlayerCurrentRoom = Cast<ARoomVolume>(BlackboardComp->GetValueAsObject("PlayerCurrentRoom"));
@@ -114,14 +164,20 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
             }
         }
 	}
-
-	if (!TargetRoom) return EBTNodeResult::Failed;
+    */
 
     FNavLocation RandomLocation;
-    if (GetRandomLocationInRoom(TargetRoom, NavSys, RandomLocation))
+
+	// Log getrandomlocationinroom attempt for debugging
+	UE_LOG(LogTemp, Warning, TEXT("Attempting to get random location in room: %s"), GetRandomLocationInRoom(CurrentRoom, NavSys, RandomLocation) ? TEXT("Success") : TEXT("Failed"));
+
+    if (GetRandomLocationInRoom(CurrentRoom, NavSys, RandomLocation))
     {
         BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), RandomLocation.Location);
-		BlackboardComp->SetValueAsObject("TargetRoom", TargetRoom);
+		BlackboardComp->SetValueAsObject("TargetRoom", CurrentRoom);
+
+		// Log location for debugging
+		UE_LOG(LogTemp, Warning, TEXT("CurrentRoom Room: %s, Random Location: %s"), *CurrentRoom->GetName(), *RandomLocation.Location.ToString());
 
         return EBTNodeResult::Succeeded;
     }
@@ -139,6 +195,10 @@ void UBTTask_Search::GetAllRooms()
     {
         ARoomVolume* Room = Cast<ARoomVolume>(Actor);
         if (Room) Rooms.Add(Room);
+        else
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Actor %s is not a valid ARoomVolume in UBTTask_Search::GetAllRooms"), *Actor->GetName());
+        }
 
     }
 }
@@ -147,25 +207,38 @@ bool UBTTask_Search::GetRandomLocationInRoom(ARoomVolume* Room, UNavigationSyste
 {
     if (!Room || !NavSys) return false;
 
+	// Log room and navsys for debugging
+	UE_LOG(LogTemp, Warning, TEXT("Getting random location in room: %s, NavSys: %s"), *Room->GetName(), *NavSys->GetName());
+
     FVector Origin, BoxExtent;
     Room->GetActorBounds(false, Origin, BoxExtent);
 
-    FVector RandomPoint = Origin + FVector(
-        FMath::FRandRange(-BoxExtent.X, BoxExtent.X),
-        FMath::FRandRange(-BoxExtent.Y, BoxExtent.Y),
-        FMath::FRandRange(-BoxExtent.Z, BoxExtent.Z)
-    );
+    constexpr int32 MaxAttempts = 10;
 
-    if (!Room->EncompassesPoint(RandomPoint)) return false;
-
-    FNavLocation Projected;
-    if (NavSys->ProjectPointToNavigation(RandomPoint, Projected, FVector(50.f, 50.f, 150.f)))
+    for (int32 i = 0; i < MaxAttempts; i++)
     {
-        if (Room->EncompassesPoint(Projected.Location))
+        FVector RandomPoint(
+            FMath::FRandRange(Origin.X - BoxExtent.X, Origin.X + BoxExtent.X),
+            FMath::FRandRange(Origin.Y - BoxExtent.Y, Origin.Y + BoxExtent.Y),
+            Origin.Z
+        );
+
+        FNavLocation ProjectedLocation;
+
+        if (NavSys->ProjectPointToNavigation(
+            RandomPoint,
+            ProjectedLocation,
+            FVector(50.f, 50.f, BoxExtent.Z)))
         {
-            OutLocation = Projected;
-            return true;
+            UE_LOG(LogTemp, Warning, TEXT("Projected location: %s"), *ProjectedLocation.Location.ToString());
+            if (Room->EncompassesPoint(ProjectedLocation.Location))
+            {
+                OutLocation = ProjectedLocation;
+                return true;
+            }
+			else UE_LOG(LogTemp, Warning, TEXT("Projected location %s is not within room bounds."), *ProjectedLocation.Location.ToString());
         }
+		else UE_LOG(LogTemp, Warning, TEXT("Failed to project point %s to navigation."), *RandomPoint.ToString());
     }
 
     return false;

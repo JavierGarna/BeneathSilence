@@ -32,6 +32,6 @@ private:
 	bool GetRandomLocationInRoom(ARoomVolume* Room, UNavigationSystemV1* NavSys, FNavLocation& OutLocation);
 	UBlackboardComponent* BlackboardComp;
 	TArray<ARoomVolume*> Rooms;
-	ARoomVolume* TargetRoom;
+	ARoomVolume* CurrentRoom;
 	uint8 CurrentStrategy;
 };

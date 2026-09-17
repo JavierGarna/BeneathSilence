@@ -35,17 +35,22 @@ void AEnemyAIController::BeginPlay()
 		TArray<AActor*> FoundRooms;
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomVolume::StaticClass(), FoundRooms);
 
-		for (AActor* Actor : FoundRooms)
+		for (AActor* Room : FoundRooms)
 		{
-			if (Actor->GetName() == TEXT("RoomVolume_1"))
-			{
-				BlackboardComp->SetValueAsObject(FName("EnemyCurrentRoom"), Actor);
-			}
+			AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(GetPawn());
+			APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
 
-			if (Actor->GetName() == TEXT("RoomVolume_14"))
+			if (Room->IsOverlappingActor(EnemyCharacter))
 			{
-				BlackboardComp->SetValueAsObject(FName("PlayerCurrentRoom"), Actor);
+				BlackboardComp->SetValueAsObject(FName("EnemyCurrentRoom"), Room);
 			}
+			else UE_LOG(LogTemp, Warning, TEXT("EnemyCharacter is not overlapping with any room."));
+
+			if (Room->IsOverlappingActor(PlayerCharacter))
+			{
+				BlackboardComp->SetValueAsObject(FName("PlayerCurrentRoom"), Room);
+			}
+			else UE_LOG(LogTemp, Warning, TEXT("PlayerCharacter is not overlapping with any room."));
 		}
 	}
 

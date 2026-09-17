@@ -139,5 +139,5 @@ void UEnemyInteractor::PerformAgentAction_Implementation(const ULearningAgentsAc
 	}
 
 	BlackboardComp->SetValueAsEnum(TEXT("CurrentState"), static_cast<uint8>(StateIndex));
-	BlackboardComp->SetValueAsEnum(TEXT("CurrentStrategy"), static_cast<uint8>(StrategyIndex));
+	//BlackboardComp->SetValueAsEnum(TEXT("CurrentStrategy"), static_cast<uint8>(StrategyIndex));
 }
