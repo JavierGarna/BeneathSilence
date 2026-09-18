@@ -79,8 +79,7 @@ public:
 	ARoomVolume* GetPlayerCurrentRoom();
 
 	void SetCurrentState(FName NewState);
-	void SetEnemyCurrentRoom(ARoomVolume* NewRoom);
-	void SetPlayerCurrentRoom(ARoomVolume* NewRoom);
+	void SetDefaultBlackboardValues();
 
 
 private:

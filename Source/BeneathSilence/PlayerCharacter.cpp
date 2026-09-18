@@ -30,6 +30,8 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	InitialLocation = GetActorLocation();
 	
 	// Let the CharacterMovementComponent handle rotation
 	GetCharacterMovement()->bOrientRotationToMovement = true; // This makes the character face movement direction

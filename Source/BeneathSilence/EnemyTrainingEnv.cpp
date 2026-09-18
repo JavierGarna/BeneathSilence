@@ -18,66 +18,43 @@ void UEnemyTrainingEnv::SetupTrainingEnvironment(ULearningAgentsManager*& InMana
 void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const int32 AgentId)
 {
 	UObject* RewardActor = GetAgent(AgentId, AEnemyCharacter::StaticClass());
-
 	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(RewardActor);
 	if (!Enemy) return;
-
 	AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
 	if (!EnemyAIController) return;
-
 	APlayerCharacter* Player = Cast<APlayerCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
 	if (!Player) return;
 
 	FEnemyLearningData LearningData = EnemyAIController->GetLearningData();
 
-	if (LearningData.CurrentDistanceToPlayer <= 200.f)
+	// Reward based on tension level matching
+	float TensionDifference = FMath::Abs(LearningData.CurrentTensionLevel - LearningData.DesiredTensionLevel);
+	OutReward += 0.25f * (1.0f - FMath::Clamp(TensionDifference, 0.0f, 1.0f));
+
+	// Player detected -> Chase
+	if (LearningData.HasHeardPlayer)
 	{
-		OutReward += 50.f;
-		return;
+		if (LearningData.CurrentState == Chase)
+		{
+			OutReward += 0.05f;
+		}
 	}
-
-	if (LearningData.CurrentState == Search)
+	// Recent unknown stimulus -> Investigate
+	else if (LearningData.TimeSinceLastStimulus < 5.0f)
 	{
-		if (LearningData.TimeSinceLastStimulus) OutReward += 0.25f * FMath::Clamp(LearningData.TimeSinceLastStimulus, 0.0f, 20.0f);
-		
-		if (LearningData.TimeSinceLastSeen < 5.0f)
+		if (LearningData.CurrentState == Investigate)
 		{
-			OutReward += 0.25f * FMath::Clamp(LearningData.TimeSinceLastSeen, 0.0f, 20.0f);
-		}
+			const float Recency = 1.0f - (LearningData.TimeSinceLastStimulus / 5.0f);
 
-		if (LearningData.IsAdjacentToPlayerRoom) 
-		{
-			OutReward += 0.25f;
+			OutReward += 0.01f * Recency;
 		}
-
-		if (LearningData.CurrentDistanceToPlayer < 1000.0f)
-		{
-			OutReward -= 0.25f;
-		}
-
 	}
-	if (LearningData.CurrentState == Investigate)
+	// Nothing detected for a while -> Search
+	else if (LearningData.TimeSinceLastStimulus > 10.0f)
 	{
-		if (LearningData.LastStimulusStrength) OutReward += 0.50f * FMath::Clamp(LearningData.LastStimulusStrength, 0.0f, 1.0f);
-		if (LearningData.TimeSinceLastStimulus) OutReward -= 0.25f * FMath::Clamp(LearningData.TimeSinceLastStimulus, 0.0f, 20.0f);
-
-		// Distance to stimulus
-		const float DistToStimulus = FVector::Dist(Enemy->GetActorLocation(), LearningData.LastStimulusLocation);
-		
-		OutReward -= 0.25f * FMath::Clamp(DistToStimulus, 0.0f, 2000.0f);
-		
-	}
-
-	if (LearningData.CurrentState == Chase)
-	{
-		if (LearningData.CurrentDistanceToPlayer < 1000.0f)
+		if (LearningData.CurrentState == Search)
 		{
-			OutReward += 0.25f;
-		}
-
-		if (LearningData.CurrentDistanceToPlayer < 500.0f)
-		{
-			OutReward += 0.25f;
+			OutReward += 0.01f;
 		}
 	}
 
@@ -88,50 +65,30 @@ void UEnemyTrainingEnv::GatherAgentCompletion_Implementation(ELearningAgentsComp
 {
 	UObject* CompletionActor = GetAgent(AgentId, AEnemyCharacter::StaticClass());
 	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(CompletionActor);
+	if (!Enemy) return;
+	AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
+	if (!EnemyAIController) return;
+	UBlackboardComponent* BlackboardComp = EnemyAIController->GetBlackboardComponent();
+	if (!BlackboardComp) return;
 
-	bool bPlayerCaught = false;
-	float TimeSinceLastSeen = 0.0f;
+	bool bPlayerCaught = BlackboardComp->GetValueAsBool("IsPlayerCaught");
+	float TimeSinceLastSeen = BlackboardComp->GetValueAsFloat("TimeSinceLastSeen");
 
-	if (Enemy)
-	{
-		AAIController* AIController = Cast<AAIController>(Enemy->GetController());
-		if (AIController)
-		{
-			UBlackboardComponent* BlackboardComp = AIController->GetBlackboardComponent();
-
-			if (BlackboardComp)
-			{
-				bPlayerCaught = BlackboardComp->GetValueAsBool("IsPlayerCaught");
-				TimeSinceLastSeen = BlackboardComp->GetValueAsFloat("TimeSinceLastSeen");
-			}
-		}
-	}
-
-	OutCompletion = ULearningAgentsCompletions::MakeCompletionOnTimeElapsed(TimeSinceLastSeen, 60.f, ELearningAgentsCompletion::Termination);
-	if (bPlayerCaught) OutCompletion = ULearningAgentsCompletions::MakeCompletionOnCondition(bPlayerCaught, ELearningAgentsCompletion::Termination);
+	if (bPlayerCaught) OutCompletion = ULearningAgentsCompletions::MakeCompletionOnCondition(true, ELearningAgentsCompletion::Termination);
+	else OutCompletion = ULearningAgentsCompletions::MakeCompletionOnTimeElapsed(TimeSinceLastSeen, 60.f, ELearningAgentsCompletion::Termination);
 }
 
 void UEnemyTrainingEnv::ResetAgentEpisodes_Implementation(const TArray<int32>& AgentIds)
 {
 	UObject* ResetActor = GetAgent(AgentIds[0], AEnemyCharacter::StaticClass());
 	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(ResetActor);
-
-	if (Enemy)
-	{
-		AAIController* AIController = Cast<AAIController>(Enemy->GetController());
-		if (AIController)
-		{
-			UBlackboardComponent* BlackboardComp = AIController->GetBlackboardComponent();
-			if (BlackboardComp)
-			{
-				Enemy->Reset();
-				
-				//Reset relevant blackboard keys
-				BlackboardComp->SetValueAsBool("IsPlayerCaught", false);
-				BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", 0.0f);
-				BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", 0.0f);
-			}
-		}
-	}
-
+	if (!Enemy) return;
+	AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
+	if (!EnemyAIController) return;
+	APlayerCharacter* Player = Cast<APlayerCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+	if (!Player) return;
+	
+	Enemy->ResetToInitialLocation();
+	Player->ResetToInitialLocation();
+	EnemyAIController->SetDefaultBlackboardValues();
 }

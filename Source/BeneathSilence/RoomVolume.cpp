@@ -20,34 +20,56 @@ ARoomVolume::ARoomVolume()
 void ARoomVolume::HandleBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
     if (OtherActor == nullptr) return;
-    AEnemyCharacter* Enemy = nullptr;
-    AEnemyAIController* EnemyAIController = nullptr;
+    AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AEnemyCharacter::StaticClass()));
+    ACharacter* PlayerCharacter = Cast<ACharacter>(OtherActor);
+    AAIController* AIController = Cast<AAIController>(EnemyCharacter->GetController());
+    APlayerController* PlayerController = Cast<APlayerController>(PlayerCharacter->GetController());
+    UBlackboardComponent* BlackboardComp = AIController->GetBlackboardComponent();
 
-    if (Cast<AEnemyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AEnemyCharacter::StaticClass())))
+    if (EnemyCharacter)
     {
-		Enemy = Cast<AEnemyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AEnemyCharacter::StaticClass()));
-		EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
-    }
-
-    if (OtherActor->IsA(APlayerCharacter::StaticClass()))
-    {
-        ACharacter* PlayerCharacter = Cast<ACharacter>(OtherActor);
-
-        if (!PlayerCharacter || !RoomCamera) return;
-
-        APlayerController* PlayerController = Cast<APlayerController>(PlayerCharacter->GetController());
-        if (!PlayerController) return;
-
-        AFixedCameraManager* CameraManager = Cast<AFixedCameraManager>(PlayerController->PlayerCameraManager);
-        if (CameraManager)
+        if (AIController)
         {
-            CameraManager->SwitchToFixedCamera(RoomCamera);
-            if (EnemyAIController) EnemyAIController->SetPlayerCurrentRoom(this);
+            if (BlackboardComp)
+            {
+                if (OtherActor->IsA(AEnemyCharacter::StaticClass()))
+                {
+					BlackboardComp->SetValueAsObject("EnemyCurrentRoom", this);
+
+                    for (ARoomVolume* ConnectedRoom : ConnectedRooms)
+                    {
+                        if (ConnectedRoom == BlackboardComp->GetValueAsObject("PlayerCurrentRoom"))
+                        {
+                            BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", true);
+                        }
+                    }
+                }
+            }
         }
     }
-    else if (OtherActor->IsA(AEnemyCharacter::StaticClass()))
+
+    if (PlayerCharacter)
     {
-        if (EnemyAIController) EnemyAIController->SetEnemyCurrentRoom(this);
+        if (!RoomCamera) return;
+
+        if (PlayerController)
+        {
+            AFixedCameraManager* CameraManager = Cast<AFixedCameraManager>(PlayerController->PlayerCameraManager);
+            if (CameraManager)
+            {
+                CameraManager->SwitchToFixedCamera(RoomCamera);
+            }
+
+			BlackboardComp->SetValueAsObject("PlayerCurrentRoom", this);
+
+			for (ARoomVolume* ConnectedRoom : ConnectedRooms)
+			{
+				if (ConnectedRoom == BlackboardComp->GetValueAsObject("EnemyCurrentRoom"))
+				{
+					BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", true);
+				}
+			}
+        }
     }
 }
 

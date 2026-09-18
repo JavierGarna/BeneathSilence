@@ -45,3 +45,23 @@ EBTNodeResult::Type UBTTask_Chase::ExecuteTask(UBehaviorTreeComponent& OwnerComp
 
 	return EBTNodeResult::Failed;
 }
+
+void UBTTask_Chase::TickTask(UBehaviorTreeComponent& OwnerComponent, uint8* NodeMemory, float DeltaSeconds)
+{
+	TimeChasingPlayer += DeltaSeconds;
+
+	UBlackboardComponent* BlackboardComp = OwnerComponent.GetBlackboardComponent();
+
+	if (BlackboardComp)
+	{
+		if (TimeChasingPlayer >= 5.f)
+		{
+			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") - DeltaSeconds * 0.1f, 0.f, 1.f));
+		}
+	}
+}
+
+void UBTTask_Chase::OnTaskFinished(UBehaviorTreeComponent& OwnerComponent, uint8* NodeMemory, EBTNodeResult::Type TaskResult)
+{
+	TimeChasingPlayer = 0.f;
+}

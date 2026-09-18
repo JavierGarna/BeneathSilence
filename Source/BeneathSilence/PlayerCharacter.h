@@ -42,11 +42,14 @@ public:
 	float SetPreviousStrafeInputValue(float Value) { PreviousStrafeInputValue = Value; return PreviousStrafeInputValue; }
 	void MoveForward(float InputValue, float ReferenceYaw);
 	void Strafe(float InputValue, float ReferenceYaw);
+	void ResetToInitialLocation() { SetActorLocation(InitialLocation); }
 
 	UPROPERTY(EditAnywhere)
 	float AgentForwardInput = 0.0f;
 	UPROPERTY(EditAnywhere)
 	float AgentStrafeInput = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsRunning = false;
 
 private:
 	UPROPERTY(EditAnywhere)
@@ -55,10 +58,10 @@ private:
 	APlayerController* PlayerController;
 	UPROPERTY(EditAnywhere)
 	ASoundLight* SoundLightActor;
-	UPROPERTY()
-	bool bIsRunning = false;
 	UPROPERTY(EditAnywhere)
 	bool bRunInference = false;
+	UPROPERTY(EditAnywhere)
+	FVector InitialLocation;
 
 	// Input actions
 	UPROPERTY(EditAnywhere)

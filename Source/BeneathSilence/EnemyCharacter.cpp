@@ -18,6 +18,8 @@ void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	InitialLocation = GetActorLocation();
+
 	TArray<AActor*> LearningAgentsManagers;
 	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName("EnemyRLManager"), LearningAgentsManagers);
 

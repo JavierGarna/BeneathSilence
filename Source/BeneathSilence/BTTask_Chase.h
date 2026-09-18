@@ -20,7 +20,10 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComponent, uint8* NodeMemory) override;
+	virtual void TickTask(UBehaviorTreeComponent& OwnerComponent, uint8* NodeMemory, float DeltaSeconds) override;
+	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComponent, uint8* NodeMemory, EBTNodeResult::Type TaskResult) override;
 
 private:
 	uint8 CurrentStrategy;
+	float TimeChasingPlayer = 0.f;
 };

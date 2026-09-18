@@ -25,38 +25,12 @@ void AEnemyAIController::BeginPlay()
 		BlackboardComp = GetBlackboardComponent();
 	}
 
-	if (BlackboardComp)
-	{
-		BlackboardComp->SetValueAsObject("SelfActor", GetPawn());
-		BlackboardComp->SetValueAsObject("PlayerActor", UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
-		BlackboardComp->SetValueAsEnum("CurrentState", 0);
-		BlackboardComp->SetValueAsEnum("CurrentStrategy", 0);
-
-		TArray<AActor*> FoundRooms;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomVolume::StaticClass(), FoundRooms);
-
-		for (AActor* Room : FoundRooms)
-		{
-			AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(GetPawn());
-			APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
-
-			if (Room->IsOverlappingActor(EnemyCharacter))
-			{
-				BlackboardComp->SetValueAsObject(FName("EnemyCurrentRoom"), Room);
-			}
-			else UE_LOG(LogTemp, Warning, TEXT("EnemyCharacter is not overlapping with any room."));
-
-			if (Room->IsOverlappingActor(PlayerCharacter))
-			{
-				BlackboardComp->SetValueAsObject(FName("PlayerCurrentRoom"), Room);
-			}
-			else UE_LOG(LogTemp, Warning, TEXT("PlayerCharacter is not overlapping with any room."));
-		}
-	}
+	SetDefaultBlackboardValues();
 
 	UAIPerceptionComponent* PerceptionComp = GetPerceptionComponent();
 
 	if (PerceptionComp) PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &AEnemyAIController::OnTargetPerceptionUpdated);
+	else UE_LOG(LogTemp, Warning, TEXT("PerceptionComp is null in AEnemyAIController::BeginPlay()"));
 }
 
 void AEnemyAIController::Tick(float DeltaTime)
@@ -71,16 +45,29 @@ void AEnemyAIController::Tick(float DeltaTime)
 		if (Player && GetPawn())
 		{
 			BlackboardComp->SetValueAsFloat("CurrentDistanceToPlayer",FVector::Dist(GetPawn()->GetActorLocation(), Player->GetActorLocation()));
+
+			if (BlackboardComp->GetValueAsFloat("CurrentDistanceToPlayer") < 500.f)
+			{
+				BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") + DeltaTime * 0.2f, 0.f, 1.f));
+			}
+			
+			if (BlackboardComp->GetValueAsFloat("CurrentDistanceToPlayer") > 2000.f)
+			{
+				BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") - DeltaTime * 0.2f, 0.f, 1.f));
+			}
 		}
 		
-		if (PlayerCurrentRoom)
-		{
-			BlackboardComp->SetValueAsObject("PlayerCurrentRoom", PlayerCurrentRoom);
-			if (PlayerCurrentRoom->ConnectedRooms.Contains(EnemyCurrentRoom)) BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", true);
-			else BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", false);
-		}
-
+		if (PlayerCurrentRoom) BlackboardComp->SetValueAsObject("PlayerCurrentRoom", PlayerCurrentRoom);
 		if (EnemyCurrentRoom) BlackboardComp->SetValueAsObject("EnemyCurrentRoom", EnemyCurrentRoom);
+
+		if (BlackboardComp->GetValueAsBool("IsAdjacentToPlayerRoom"))
+		{
+			BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") + DeltaTime * 0.1f, 0.f, 1.f));
+		}
+		else
+		{
+			BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") - DeltaTime * 0.1f, 0.f, 1.f));
+		}
 
 		if (BlackboardComp->GetValueAsBool("HasHeardPlayer"))
 		{
@@ -91,7 +78,35 @@ void AEnemyAIController::Tick(float DeltaTime)
 				HasHeardPlayerTimer = 0;
 			}
 		}
+
+		if (BlackboardComp->GetValueAsFloat("TimeSinceLastSeen") > 15.f)
+		{
+			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") + DeltaTime * 0.1f, 0.f, 1.f));
+		}
+
+		if (BlackboardComp->GetValueAsFloat("CurrentTensionLevel") >= 0.8f)
+		{
+			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") - DeltaTime * 0.05f, 0.f, 1.f));
+		}
+		else if (BlackboardComp->GetValueAsFloat("CurrentTensionLevel") <= 0.2)
+		{
+			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") + DeltaTime * 0.05f, 0.f, 1.f));
+		}
 	}
+
+	// Log all data from the blackboard
+	UE_LOG(LogTemp, Warning, TEXT("CurrentState: %d"), BlackboardComp->GetValueAsEnum("CurrentState"));
+	UE_LOG(LogTemp, Warning, TEXT("CurrentStrategy: %d"), BlackboardComp->GetValueAsEnum("CurrentStrategy"));
+	UE_LOG(LogTemp, Warning, TEXT("LastKnownPlayerLocation: %s"), *BlackboardComp->GetValueAsVector("LastKnownPlayerLocation").ToString());
+	UE_LOG(LogTemp, Warning, TEXT("CurrentDistanceToPlayer: %f"), BlackboardComp->GetValueAsFloat("CurrentDistanceToPlayer"));
+	UE_LOG(LogTemp, Warning, TEXT("IsAdjacentToPlayerRoom: %s"), BlackboardComp->GetValueAsBool("IsAdjacentToPlayerRoom") ? TEXT("Is Adjacent") : TEXT("Is Not Adjacent"));
+	UE_LOG(LogTemp, Warning, TEXT("TimeSinceLastSeen: %f"), BlackboardComp->GetValueAsFloat("TimeSinceLastSeen"));
+	UE_LOG(LogTemp, Warning, TEXT("LastStimulusStrength: %f"), BlackboardComp->GetValueAsFloat("LastStimulusStrength"));
+	UE_LOG(LogTemp, Warning, TEXT("LastStimulusLocation: %s"), *BlackboardComp->GetValueAsVector("LastStimulusLocation").ToString());
+	UE_LOG(LogTemp, Warning, TEXT("TimeSinceLastStimulus: %f"), BlackboardComp->GetValueAsFloat("TimeSinceLastStimulus"));
+	UE_LOG(LogTemp, Warning, TEXT("HasHeardPlayer: %s"), BlackboardComp->GetValueAsBool("HasHeardPlayer") ? TEXT("Has Heard Player") : TEXT("Has Not Heard Player"));
+	UE_LOG(LogTemp, Warning, TEXT("DesiredTensionLevel: %f"), BlackboardComp->GetValueAsFloat("DesiredTensionLevel"));
+	UE_LOG(LogTemp, Warning, TEXT("CurrentTensionLevel: %f"), BlackboardComp->GetValueAsFloat("CurrentTensionLevel"));
 }
 
 FEnemyLearningData AEnemyAIController::GetLearningData()
@@ -109,7 +124,7 @@ FEnemyLearningData AEnemyAIController::GetLearningData()
 	LearningData.LastKnownPlayerLocation = GetBlackboardComponent()->GetValueAsVector("LastKnownPlayerLocation");
 	LearningData.LastKnownPlayerRoom = GetBlackboardComponent()->GetValueAsInt("LastKnownPlayerRoom");
 	LearningData.TimeSinceLastSeen = GetBlackboardComponent()->GetValueAsFloat("TimeSinceLastSeen");
-	LearningData.ConfidenceLevel = GetBlackboardComponent()->GetValueAsFloat("ConfidenceLevel");
+	LearningData.ConfidenceLevel = GetBlackboardComponent()->GetValueAsFloat("StressLevel");
 
 	LearningData.LastStimulusStrength = GetBlackboardComponent()->GetValueAsFloat("LastStimulusStrength");
 	LearningData.LastStimulusLocation = GetBlackboardComponent()->GetValueAsVector("LastStimulusLocation");
@@ -145,14 +160,59 @@ void AEnemyAIController::SetCurrentState(FName NewState)
 	GetBlackboardComponent()->SetValueAsName("CurrentState", NewState);
 }
 
-void AEnemyAIController::SetEnemyCurrentRoom(ARoomVolume* NewRoom)
+void AEnemyAIController::SetDefaultBlackboardValues()
 {
-	EnemyCurrentRoom = NewRoom;
-}
+	if (BlackboardComp)
+	{
+		BlackboardComp->SetValueAsObject("SelfActor", GetPawn());
+		BlackboardComp->SetValueAsObject("PlayerActor", UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+		// State / Strategy
+		BlackboardComp->SetValueAsEnum("CurrentState", 0);
+		BlackboardComp->SetValueAsEnum("CurrentStrategy", 0);
+		// Current target
+		BlackboardComp->ClearValue("TargetActor");
+		BlackboardComp->ClearValue("TargetLocation");
+		BlackboardComp->ClearValue("TargetRoom");
+		// Last known player information
+		BlackboardComp->ClearValue("LastKnownPlayerLocation");
+		BlackboardComp->SetValueAsInt("LastKnownPlayerRoom", -1);
+		BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", 0.0f);
+		// Confidence / Stress
+		BlackboardComp->SetValueAsFloat("StressLevel", 0.0f);
+		// Stimulus information
+		BlackboardComp->SetValueAsFloat("LastStimulusStrength", 0.0f);
+		BlackboardComp->ClearValue("LastStimulusLocation");
+		BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", 0.0f);
+		BlackboardComp->SetValueAsBool("HasHeardPlayer", false);
+		// Player relationship
+		BlackboardComp->SetValueAsFloat("CurrentDistanceToPlayer", 0.0f);
+		BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", false);
+		// Tension
+		BlackboardComp->SetValueAsFloat("CurrentTensionLevel", 0.0f);
+		// Completion
+		BlackboardComp->SetValueAsBool("IsPlayerCaught", false);
 
-void AEnemyAIController::SetPlayerCurrentRoom(ARoomVolume* NewRoom)
-{
-	PlayerCurrentRoom = NewRoom;
+		TArray<AActor*> FoundRooms;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoomVolume::StaticClass(), FoundRooms);
+
+		for (AActor* Room : FoundRooms)
+		{
+			AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(GetPawn());
+			APlayerCharacter* PlayerCharacter = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+
+			if (Room->IsOverlappingActor(EnemyCharacter))
+			{
+				BlackboardComp->SetValueAsObject(FName("EnemyCurrentRoom"), Room);
+			}
+			else UE_LOG(LogTemp, Warning, TEXT("EnemyCharacter is not overlapping with any room."));
+
+			if (Room->IsOverlappingActor(PlayerCharacter))
+			{
+				BlackboardComp->SetValueAsObject(FName("PlayerCurrentRoom"), Room);
+			}
+			else UE_LOG(LogTemp, Warning, TEXT("PlayerCharacter is not overlapping with any room."));
+		}
+	}
 }
 
 void AEnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
