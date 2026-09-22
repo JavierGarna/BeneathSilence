@@ -51,7 +51,7 @@ void AEnemyAIController::Tick(float DeltaTime)
 				BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") + DeltaTime * 0.2f, 0.f, 1.f));
 			}
 			
-			if (BlackboardComp->GetValueAsFloat("CurrentDistanceToPlayer") > 2000.f)
+			if (BlackboardComp->GetValueAsFloat("CurrentDistanceToPlayer") > 1500.f)
 			{
 				BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") - DeltaTime * 0.2f, 0.f, 1.f));
 			}
@@ -62,21 +62,11 @@ void AEnemyAIController::Tick(float DeltaTime)
 
 		if (BlackboardComp->GetValueAsBool("IsAdjacentToPlayerRoom"))
 		{
-			BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") + DeltaTime * 0.1f, 0.f, 1.f));
+			BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") + DeltaTime * 0.05f, 0.f, 1.f));
 		}
 		else
 		{
 			BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") - DeltaTime * 0.1f, 0.f, 1.f));
-		}
-
-		if (BlackboardComp->GetValueAsBool("HasHeardPlayer"))
-		{
-			HasHeardPlayerTimer += DeltaTime;
-			if (HasHeardPlayerTimer >= FMath::FRandRange(5.f, 10.f))
-			{
-				BlackboardComp->SetValueAsBool("HasHeardPlayer", false);
-				HasHeardPlayerTimer = 0;
-			}
 		}
 
 		if (BlackboardComp->GetValueAsFloat("TimeSinceLastSeen") > 15.f)
@@ -90,11 +80,12 @@ void AEnemyAIController::Tick(float DeltaTime)
 		}
 		else if (BlackboardComp->GetValueAsFloat("CurrentTensionLevel") <= 0.2)
 		{
-			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") + DeltaTime * 0.05f, 0.f, 1.f));
+			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") + DeltaTime * 0.01f, 0.f, 1.f));
 		}
 	}
 
 	// Log all data from the blackboard
+	/*
 	UE_LOG(LogTemp, Warning, TEXT("CurrentState: %d"), BlackboardComp->GetValueAsEnum("CurrentState"));
 	UE_LOG(LogTemp, Warning, TEXT("CurrentStrategy: %d"), BlackboardComp->GetValueAsEnum("CurrentStrategy"));
 	UE_LOG(LogTemp, Warning, TEXT("LastKnownPlayerLocation: %s"), *BlackboardComp->GetValueAsVector("LastKnownPlayerLocation").ToString());
@@ -107,6 +98,7 @@ void AEnemyAIController::Tick(float DeltaTime)
 	UE_LOG(LogTemp, Warning, TEXT("HasHeardPlayer: %s"), BlackboardComp->GetValueAsBool("HasHeardPlayer") ? TEXT("Has Heard Player") : TEXT("Has Not Heard Player"));
 	UE_LOG(LogTemp, Warning, TEXT("DesiredTensionLevel: %f"), BlackboardComp->GetValueAsFloat("DesiredTensionLevel"));
 	UE_LOG(LogTemp, Warning, TEXT("CurrentTensionLevel: %f"), BlackboardComp->GetValueAsFloat("CurrentTensionLevel"));
+	*/
 }
 
 FEnemyLearningData AEnemyAIController::GetLearningData()
@@ -175,20 +167,21 @@ void AEnemyAIController::SetDefaultBlackboardValues()
 		BlackboardComp->ClearValue("TargetRoom");
 		// Last known player information
 		BlackboardComp->ClearValue("LastKnownPlayerLocation");
-		BlackboardComp->SetValueAsInt("LastKnownPlayerRoom", -1);
+		BlackboardComp->SetValueAsInt("LastKnownPlayerRoom", BlackboardComp->GetValueAsInt("PlayerCurrentRoom"));
 		BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", 0.0f);
 		// Confidence / Stress
 		BlackboardComp->SetValueAsFloat("StressLevel", 0.0f);
 		// Stimulus information
 		BlackboardComp->SetValueAsFloat("LastStimulusStrength", 0.0f);
 		BlackboardComp->ClearValue("LastStimulusLocation");
-		BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", 0.0f);
+		BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", 1000.0f);
 		BlackboardComp->SetValueAsBool("HasHeardPlayer", false);
 		// Player relationship
 		BlackboardComp->SetValueAsFloat("CurrentDistanceToPlayer", 0.0f);
 		BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", false);
 		// Tension
 		BlackboardComp->SetValueAsFloat("CurrentTensionLevel", 0.0f);
+		BlackboardComp->SetValueAsFloat("DesiredTensionLevel", 0.0f);
 		// Completion
 		BlackboardComp->SetValueAsBool("IsPlayerCaught", false);
 
@@ -224,5 +217,15 @@ void AEnemyAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus St
 		BlackboardComp->SetValueAsVector("LastStimulusLocation", Stimulus.StimulusLocation);
 		BlackboardComp->SetValueAsFloat("LastStimulusStrength", Stimulus.Strength);
 		BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", 0.0f);
+
+		if (Actor == Player)
+		{
+			const float DistanceToPlayer = FVector::Dist(GetPawn()->GetActorLocation(), Player->GetActorLocation());
+
+			const float HearingPlayerDistance = 500.0f;
+			const bool bHasHeardPlayer = DistanceToPlayer <= HearingPlayerDistance;
+
+			BlackboardComp->SetValueAsBool("HasHeardPlayer", bHasHeardPlayer);
+		}
 	}
 }

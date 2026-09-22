@@ -199,7 +199,6 @@ void UBTTask_Search::GetAllRooms()
         {
             UE_LOG(LogTemp, Warning, TEXT("Actor %s is not a valid ARoomVolume in UBTTask_Search::GetAllRooms"), *Actor->GetName());
         }
-
     }
 }
 

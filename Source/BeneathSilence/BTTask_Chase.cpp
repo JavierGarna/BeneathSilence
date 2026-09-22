@@ -22,6 +22,8 @@ EBTNodeResult::Type UBTTask_Chase::ExecuteTask(UBehaviorTreeComponent& OwnerComp
 	// Get player location
 	APlayerCharacter* Player = Cast<APlayerCharacter>(EnemyAIController->GetBlackboardComponent()->GetValueAsObject("PlayerActor"));
 	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(EnemyAIController->GetPawn());
+	bool bHasHeardPlayer = EnemyAIController->GetBlackboardComponent()->GetValueAsBool("HasHeardPlayer");
+	if (!bHasHeardPlayer) return EBTNodeResult::Failed;
 
 	if (Player && Enemy)
 	{
@@ -31,7 +33,7 @@ EBTNodeResult::Type UBTTask_Chase::ExecuteTask(UBehaviorTreeComponent& OwnerComp
 		{
 			if (FVector::Dist(Player->GetActorLocation(), Enemy->GetActorLocation()) <= 100.f)
 			{
-				UGameplayStatics::ApplyDamage(Player, 20.f, Enemy->GetController(), Enemy, UDamageType::StaticClass());
+				//UGameplayStatics::ApplyDamage(Player, 20.f, Enemy->GetController(), Enemy, UDamageType::StaticClass());
 				BlackboardComp->SetValueAsBool("IsPlayerCaught", true);
 			}
 
@@ -64,4 +66,10 @@ void UBTTask_Chase::TickTask(UBehaviorTreeComponent& OwnerComponent, uint8* Node
 void UBTTask_Chase::OnTaskFinished(UBehaviorTreeComponent& OwnerComponent, uint8* NodeMemory, EBTNodeResult::Type TaskResult)
 {
 	TimeChasingPlayer = 0.f;
+
+	UBlackboardComponent* BlackboardComp = OwnerComponent.GetBlackboardComponent();
+	if (BlackboardComp)
+	{
+		BlackboardComp->SetValueAsBool("HasHeardPlayer", false);
+	}
 }

@@ -18,7 +18,8 @@ enum EEnemyState
 {
 	Search,
 	Investigate,
-	Chase
+	Chase,
+	RunAway
 };
 
 enum EEnemyStrategy

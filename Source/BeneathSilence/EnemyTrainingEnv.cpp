@@ -29,34 +29,54 @@ void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const
 
 	// Reward based on tension level matching
 	float TensionDifference = FMath::Abs(LearningData.CurrentTensionLevel - LearningData.DesiredTensionLevel);
-	OutReward += 0.25f * (1.0f - FMath::Clamp(TensionDifference, 0.0f, 1.0f));
+	TensionDifference = FMath::Clamp(TensionDifference, 0.0f, 1.0f);
+	const float TensionReward = FMath::Lerp(0.1f, -0.1f, TensionDifference);
+	OutReward += TensionReward;
 
 	// Player detected -> Chase
-	if (LearningData.HasHeardPlayer)
-	{
-		if (LearningData.CurrentState == Chase)
-		{
-			OutReward += 0.05f;
-		}
-	}
-	// Recent unknown stimulus -> Investigate
-	else if (LearningData.TimeSinceLastStimulus < 5.0f)
-	{
-		if (LearningData.CurrentState == Investigate)
-		{
-			const float Recency = 1.0f - (LearningData.TimeSinceLastStimulus / 5.0f);
+	const float ChaseScore = LearningData.HasHeardPlayer ? 1.0f : 0.0f;
 
-			OutReward += 0.01f * Recency;
-		}
-	}
-	// Nothing detected for a while -> Search
-	else if (LearningData.TimeSinceLastStimulus > 10.0f)
+	// Recent unknown stimulus -> Investigate
+	float InvestigateScore = 0.0f;
+
+	if (!LearningData.HasHeardPlayer)
 	{
-		if (LearningData.CurrentState == Search)
-		{
-			OutReward += 0.01f;
-		}
+		InvestigateScore = 1.0f - FMath::Clamp(LearningData.TimeSinceLastStimulus / 10.0f, 0.0f, 1.0f);
 	}
+
+	// Nothing detected for a while -> Search
+	const float SearchScore = FMath::Clamp(LearningData.TimeSinceLastSeen / 10.0f, 0.0f, 1.0f);
+
+	// Low tension level desired -> RunAway
+	const float RunAwayScore = 1.0f - FMath::Clamp(LearningData.DesiredTensionLevel, 0.0f, 1.0f);
+
+	float StateScore = 0.5f;
+
+	switch (LearningData.CurrentState)
+	{
+		case Chase:
+			StateScore = ChaseScore;
+			break;
+
+		case Investigate:
+			StateScore = InvestigateScore;
+			break;
+
+		case Search:
+			StateScore = SearchScore;
+			break;
+
+		case RunAway:
+			StateScore = RunAwayScore;
+			break;
+
+		default:
+			break;
+	}
+
+	const float StateReward = FMath::Lerp(-0.01f, 0.01f, StateScore);
+
+	OutReward += StateReward;
 
 	ULearningAgentsRewards::MakeReward(OutReward, 1.0f, TEXT("EnemyReward"), true, this, AgentId, Enemy->GetActorLocation(), FLinearColor::Red);
 }
@@ -74,8 +94,25 @@ void UEnemyTrainingEnv::GatherAgentCompletion_Implementation(ELearningAgentsComp
 	bool bPlayerCaught = BlackboardComp->GetValueAsBool("IsPlayerCaught");
 	float TimeSinceLastSeen = BlackboardComp->GetValueAsFloat("TimeSinceLastSeen");
 
-	if (bPlayerCaught) OutCompletion = ULearningAgentsCompletions::MakeCompletionOnCondition(true, ELearningAgentsCompletion::Termination);
-	else OutCompletion = ULearningAgentsCompletions::MakeCompletionOnTimeElapsed(TimeSinceLastSeen, 60.f, ELearningAgentsCompletion::Termination);
+	// Log TimeSinceLastSeen for debugging
+	//UE_LOG(LogTemp, Warning, TEXT("TimeSinceLastSeen: %f"), TimeSinceLastSeen);
+
+	if (bPlayerCaught)
+	{
+		OutCompletion = ELearningAgentsCompletion::Termination;
+		// Log that the player was caught
+		UE_LOG(LogTemp, Warning, TEXT("Player Caught!"));
+	}
+	else if (TimeSinceLastSeen >= 60.0f)
+	{
+		OutCompletion = ELearningAgentsCompletion::Termination;
+		// Log that the player was not seen for too long
+		UE_LOG(LogTemp, Warning, TEXT("Player not seen for too long!"));
+	}
+	else
+	{
+		OutCompletion = ELearningAgentsCompletion::Running;
+	}
 }
 
 void UEnemyTrainingEnv::ResetAgentEpisodes_Implementation(const TArray<int32>& AgentIds)
