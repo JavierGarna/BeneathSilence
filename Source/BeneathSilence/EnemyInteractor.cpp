@@ -23,18 +23,32 @@ void UEnemyInteractor::SpecifyAgentObservation_Implementation(FLearningAgentsObs
 	// Use the LearningAgents API to specify a struct observation for EnemyData
 	TMap<FName, FLearningAgentsObservationSchemaElement> Elements;
 
-	// Sub-elements of the EnemyData struct observation
-	Elements.Add(TEXT("CurrentState"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, 4, TEXT("CurrentStateObservation")));
-	//Elements.Add(TEXT("CurrentStrategy"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, 3, TEXT("CurrentStrategyObservation")));
-	Elements.Add(TEXT("LastKnownPlayerRoom"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, Rooms.Num(), TEXT("LastKnownPlayerRoomObservation")));
-	Elements.Add(TEXT("TimeSincePlayerSeen"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("TimeSincePlayerSeenObservation")));
-	Elements.Add(TEXT("ConfidenceLevel"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("ConfidenceLevelObservation")));
-	Elements.Add(TEXT("LastStimulusStrength"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("LastStimulusStrengthObservation")));
-	Elements.Add(TEXT("TimeSinceLastStimulus"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("TimeSinceLastStimulusObservation")));
-	Elements.Add(TEXT("HasHeardPlayer"), ULearningAgentsObservations::SpecifyBoolObservation(InObservationSchema, TEXT("HasHeardPlayerObservation")));
-	Elements.Add(TEXT("CurrentDistanceToPlayer"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("CurrentDistanceToPlayerObservation")));
-	Elements.Add(TEXT("IsAdjacentToPlayerRoom"), ULearningAgentsObservations::SpecifyBoolObservation(InObservationSchema, TEXT("IsAdjacentToPlayerRoomObservation")));
+    // -------------------------------------------------------
+    // ROOM INFORMATION
+    // -------------------------------------------------------
+    Elements.Add(TEXT("LastKnownPlayerRoom"), ULearningAgentsObservations::SpecifyExclusiveDiscreteObservation(InObservationSchema, Rooms.Num(), TEXT("LastKnownPlayerRoomObservation")));
 
+    // -------------------------------------------------------
+    // PLAYER INFORMATION
+    // -------------------------------------------------------
+    Elements.Add(TEXT("TimeSincePlayerSeen"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("TimeSincePlayerSeenObservation")));
+    Elements.Add(TEXT("CurrentDistanceToPlayer"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("CurrentDistanceToPlayerObservation")));
+    Elements.Add(TEXT("IsAdjacentToPlayerRoom"), ULearningAgentsObservations::SpecifyBoolObservation(InObservationSchema, TEXT("IsAdjacentToPlayerRoomObservation")));
+
+    // -------------------------------------------------------
+    // HEARING / STIMULUS INFORMATION
+    // -------------------------------------------------------
+    Elements.Add(TEXT("LastStimulusStrength"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("LastStimulusStrengthObservation")));
+    Elements.Add(TEXT("TimeSinceLastStimulus"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("TimeSinceLastStimulusObservation")));
+    Elements.Add(TEXT("HasHeardPlayer"), ULearningAgentsObservations::SpecifyBoolObservation(InObservationSchema, TEXT("HasHeardPlayerObservation")));
+
+    // -------------------------------------------------------
+    // TENSION INFORMATION
+    // -------------------------------------------------------
+    Elements.Add(TEXT("ConfidenceLevel"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("ConfidenceLevelObservation")));
+    Elements.Add(TEXT("DesiredTensionLevel"), ULearningAgentsObservations::SpecifyFloatObservation(InObservationSchema, 1.0f, TEXT("DesiredTensionLevelObservation")));
+
+	// Create final struct
 	OutObservationSchemaElement = ULearningAgentsObservations::SpecifyStructObservation(InObservationSchema, Elements, TEXT("Observations"));
 }
 
@@ -52,18 +66,55 @@ void UEnemyInteractor::GatherAgentObservation_Implementation(FLearningAgentsObse
 			LearningData = EnemyAIController->GetLearningData();
 		}
 
-		Elements.Add(TEXT("CurrentState"), ULearningAgentsObservations::MakeExclusiveDiscreteObservation(InObservationObject, LearningData.CurrentState, TEXT("CurrentStateObservation")));
-		//Elements.Add(TEXT("CurrentStrategy"), ULearningAgentsObservations::MakeExclusiveDiscreteObservation(InObservationObject, LearningData.CurrentStrategy, TEXT("CurrentStrategyObservation")));
-		Elements.Add(TEXT("LastKnownPlayerRoom"), ULearningAgentsObservations::MakeExclusiveDiscreteObservation(InObservationObject, LearningData.LastKnownPlayerRoom, TEXT("LastKnownPlayerRoomObservation")));
-		Elements.Add(TEXT("TimeSincePlayerSeen"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.TimeSinceLastSeen, TEXT("TimeSincePlayerSeenObservation")));
-		Elements.Add(TEXT("ConfidenceLevel"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.ConfidenceLevel, TEXT("ConfidenceLevelObservation")));
-		Elements.Add(TEXT("LastStimulusStrength"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.LastStimulusStrength, TEXT("LastStimulusStrengthObservation")));
-		Elements.Add(TEXT("TimeSinceLastStimulus"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.TimeSinceLastStimulus, TEXT("TimeSinceLastStimulusObservation")));
-		Elements.Add(TEXT("HasHeardPlayer"), ULearningAgentsObservations::MakeBoolObservation(InObservationObject, LearningData.HasHeardPlayer, TEXT("HasHeardPlayerObservation")));
-		Elements.Add(TEXT("CurrentDistanceToPlayer"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, LearningData.CurrentDistanceToPlayer, TEXT("CurrentDistanceToPlayerObservation")));
-		Elements.Add(TEXT("IsAdjacentToPlayerRoom"), ULearningAgentsObservations::MakeBoolObservation(InObservationObject, LearningData.IsAdjacentToPlayerRoom , TEXT("IsAdjacentToPlayerRoomObservation")));
+        // -------------------------------------------------------
+        // NORMALIZE CONTINUOUS VALUES
+        // -------------------------------------------------------
+
+        // 0 seconds = 0
+        // 10+ seconds = 1
+        const float NormalizedTimeSinceSeen = FMath::Clamp(LearningData.TimeSinceLastSeen / 10.0f, 0.0f, 1.0f);
+
+        // 0 seconds = 0
+        // 10+ seconds = 1
+        const float NormalizedTimeSinceStimulus = FMath::Clamp(LearningData.TimeSinceLastStimulus / 10.0f, 0.0f, 1.0f);
+
+        // 0 units = 0
+        // 2000+ units = 1
+        const float NormalizedDistance = FMath::Clamp(LearningData.CurrentDistanceToPlayer / 2000.0f, 0.0f, 1.0f);
+        const float NormalizedDesiredTension = FMath::Clamp(LearningData.DesiredTensionLevel, 0.0f, 1.0f);
+        const float NormalizedConfidence = FMath::Clamp(LearningData.ConfidenceLevel, 0.0f, 1.0f);
+
+        // If LastStimulusStrength is already 0-1,
+        // this simply ensures it remains within that range.
+        const float NormalizedStimulusStrength = FMath::Clamp(LearningData.LastStimulusStrength, 0.0f, 1.0f);
+
+        // -------------------------------------------------------
+        // ROOM INFORMATION
+        // -------------------------------------------------------
+        Elements.Add(TEXT("LastKnownPlayerRoom"), ULearningAgentsObservations::MakeExclusiveDiscreteObservation(InObservationObject, LearningData.LastKnownPlayerRoom, TEXT("LastKnownPlayerRoomObservation")));
+
+        // -------------------------------------------------------
+        // PLAYER INFORMATION
+        // -------------------------------------------------------
+        Elements.Add(TEXT("TimeSincePlayerSeen"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, NormalizedTimeSinceSeen, TEXT("TimeSincePlayerSeenObservation")));
+        Elements.Add(TEXT("CurrentDistanceToPlayer"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, NormalizedDistance, TEXT("CurrentDistanceToPlayerObservation")));
+        Elements.Add(TEXT("IsAdjacentToPlayerRoom"), ULearningAgentsObservations::MakeBoolObservation(InObservationObject, LearningData.IsAdjacentToPlayerRoom, TEXT("IsAdjacentToPlayerRoomObservation")));
+
+        // -------------------------------------------------------
+        // HEARING / STIMULUS INFORMATION
+        // -------------------------------------------------------
+        Elements.Add(TEXT("LastStimulusStrength"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, NormalizedStimulusStrength, TEXT("LastStimulusStrengthObservation")));
+        Elements.Add(TEXT("TimeSinceLastStimulus"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, NormalizedTimeSinceStimulus, TEXT("TimeSinceLastStimulusObservation")));
+        Elements.Add(TEXT("HasHeardPlayer"), ULearningAgentsObservations::MakeBoolObservation(InObservationObject, LearningData.HasHeardPlayer, TEXT("HasHeardPlayerObservation")));
+
+        // -------------------------------------------------------
+        // TENSION INFORMATION
+        // -------------------------------------------------------
+        Elements.Add(TEXT("ConfidenceLevel"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, NormalizedConfidence, TEXT("ConfidenceLevelObservation")));
+        Elements.Add(TEXT("DesiredTensionLevel"), ULearningAgentsObservations::MakeFloatObservation(InObservationObject, NormalizedDesiredTension, TEXT("DesiredTensionLevelObservation")));
 	}
 
+	// Create final observation
 	OutObservationObjectElement = ULearningAgentsObservations::MakeStructObservation(InObservationObject, Elements, TEXT("Observations"));
 }
  
@@ -71,7 +122,7 @@ void UEnemyInteractor::SpecifyAgentAction_Implementation(FLearningAgentsActionSc
 {
 	TMap<FName, FLearningAgentsActionSchemaElement> Elements;
 
-	Elements.Add(TEXT("CurrentState"), ULearningAgentsActions::SpecifyExclusiveDiscreteAction(InActionSchema, 4, { 0.25f, 0.25f, 0.25f, 0.25f }, TEXT("CurrentStateAction")));
+	Elements.Add(TEXT("CurrentState"), ULearningAgentsActions::SpecifyExclusiveDiscreteAction(InActionSchema, 4, {}, TEXT("CurrentStateAction")));
 	//Elements.Add(TEXT("CurrentStrategy"), ULearningAgentsActions::SpecifyExclusiveDiscreteAction(InActionSchema, 3, StrategyPriorProbabilities, TEXT("CurrentStrategyAction")));
 
 	OutActionSchemaElement = ULearningAgentsActions::SpecifyStructAction(InActionSchema, Elements);

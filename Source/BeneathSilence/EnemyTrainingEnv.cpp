@@ -41,42 +41,50 @@ void UEnemyTrainingEnv::GatherAgentReward_Implementation(float& OutReward, const
 
 	if (!LearningData.HasHeardPlayer)
 	{
-		InvestigateScore = 1.0f - FMath::Clamp(LearningData.TimeSinceLastStimulus / 10.0f, 0.0f, 1.0f);
+		InvestigateScore = 1.0f - FMath::Clamp(LearningData.TimeSinceLastStimulus / 3.0f, 0.0f, 1.0f);
 	}
 
 	// Nothing detected for a while -> Search
-	const float SearchScore = FMath::Clamp(LearningData.TimeSinceLastSeen / 10.0f, 0.0f, 1.0f);
-
+	const float SearchScore = FMath::Clamp(LearningData.TimeSinceLastSeen / 10.0f, 0.0f, 1.0f) * FMath::Clamp(LearningData.TimeSinceLastStimulus / 10.0f, 0.0f, 1.0f);
 	// Low tension level desired -> RunAway
-	const float RunAwayScore = 1.0f - FMath::Clamp(LearningData.DesiredTensionLevel, 0.0f, 1.0f);
+	const float TensionScore = 1.0f - FMath::Clamp(LearningData.DesiredTensionLevel, 0.0f, 1.0f);
+
+	const float DistanceScore = 1.0f - FMath::Clamp(LearningData.CurrentDistanceToPlayer / 2000.0f, 0.0f, 1.0f);
+
+	const float RunAwayScore =(TensionScore * 0.6f) + (DistanceScore * 0.4f);
 
 	float StateScore = 0.5f;
 
 	switch (LearningData.CurrentState)
 	{
 		case Chase:
-			StateScore = ChaseScore;
+			StateScore = FMath::Lerp(-1.0f, 1.0f, ChaseScore);
 			break;
 
 		case Investigate:
-			StateScore = InvestigateScore;
+			StateScore = FMath::Lerp(-1.0f, 1.0f, InvestigateScore);
 			break;
 
 		case Search:
-			StateScore = SearchScore;
+			StateScore = FMath::Lerp(-1.0f, 1.0f, SearchScore);
 			break;
 
 		case RunAway:
-			StateScore = RunAwayScore;
-			break;
-
-		default:
+			StateScore = FMath::Lerp(-1.0f, 1.0f, RunAwayScore);
 			break;
 	}
 
-	const float StateReward = FMath::Lerp(-0.01f, 0.01f, StateScore);
-
+	const float StateReward = StateScore * 0.1f;
 	OutReward += StateReward;
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("REWARD: CurrentState=%d | Chase=%.2f Investigate=%.2f Search=%.2f RunAway=%.2f | StateScore=%.2f"),
+		static_cast<int32>(LearningData.CurrentState),
+		ChaseScore,
+		InvestigateScore,
+		SearchScore,
+		RunAwayScore,
+		StateScore);
 
 	ULearningAgentsRewards::MakeReward(OutReward, 1.0f, TEXT("EnemyReward"), true, this, AgentId, Enemy->GetActorLocation(), FLinearColor::Red);
 }

@@ -54,14 +54,14 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     {
 		bool bFoundCurrentRoom = false;
 
-        if (CurrentRoom->EnemyTimeInRoom >= 20.f)
+        if (CurrentRoom->EnemyTimeInRoom >= 10.f)
         {
 			for (ARoomVolume* AdjacentRoom : CurrentRoom->ConnectedRooms)
 			{
 				if (!IsValid(AdjacentRoom)) continue;
                 if (AdjacentRoom->bIsLocked) continue;
 
-				if (AdjacentRoom->EnemyTimeInRoom < 20.0f)
+				if (AdjacentRoom->EnemyTimeInRoom < 10.0f)
 				{
 					CurrentRoom = AdjacentRoom;
 					bFoundCurrentRoom = true;
@@ -168,16 +168,10 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 
     FNavLocation RandomLocation;
 
-	// Log getrandomlocationinroom attempt for debugging
-	UE_LOG(LogTemp, Warning, TEXT("Attempting to get random location in room: %s"), GetRandomLocationInRoom(CurrentRoom, NavSys, RandomLocation) ? TEXT("Success") : TEXT("Failed"));
-
     if (GetRandomLocationInRoom(CurrentRoom, NavSys, RandomLocation))
     {
         BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), RandomLocation.Location);
 		BlackboardComp->SetValueAsObject("TargetRoom", CurrentRoom);
-
-		// Log location for debugging
-		UE_LOG(LogTemp, Warning, TEXT("CurrentRoom Room: %s, Random Location: %s"), *CurrentRoom->GetName(), *RandomLocation.Location.ToString());
 
         return EBTNodeResult::Succeeded;
     }
@@ -206,9 +200,6 @@ bool UBTTask_Search::GetRandomLocationInRoom(ARoomVolume* Room, UNavigationSyste
 {
     if (!Room || !NavSys) return false;
 
-	// Log room and navsys for debugging
-	UE_LOG(LogTemp, Warning, TEXT("Getting random location in room: %s, NavSys: %s"), *Room->GetName(), *NavSys->GetName());
-
     FVector Origin, BoxExtent;
     Room->GetActorBounds(false, Origin, BoxExtent);
 
@@ -229,15 +220,12 @@ bool UBTTask_Search::GetRandomLocationInRoom(ARoomVolume* Room, UNavigationSyste
             ProjectedLocation,
             FVector(50.f, 50.f, BoxExtent.Z)))
         {
-            UE_LOG(LogTemp, Warning, TEXT("Projected location: %s"), *ProjectedLocation.Location.ToString());
             if (Room->EncompassesPoint(ProjectedLocation.Location))
             {
                 OutLocation = ProjectedLocation;
                 return true;
             }
-			else UE_LOG(LogTemp, Warning, TEXT("Projected location %s is not within room bounds."), *ProjectedLocation.Location.ToString());
         }
-		else UE_LOG(LogTemp, Warning, TEXT("Failed to project point %s to navigation."), *RandomPoint.ToString());
     }
 
     return false;

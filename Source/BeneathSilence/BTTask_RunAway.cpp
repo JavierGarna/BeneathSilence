@@ -70,7 +70,7 @@ EBTNodeResult::Type UBTTask_RunAway::ExecuteTask(UBehaviorTreeComponent& OwnerCo
             BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), RandomLocation.Location);
             BlackboardComp->SetValueAsObject("TargetRoom", TargetRoom);
 
-            if (TargetRoom->EnemyTimeInRoom >= 20.f)
+            if (TargetRoom->EnemyTimeInRoom >= 10.f)
             {
                 for (ARoomVolume* Room : Rooms)
                 {
@@ -82,7 +82,6 @@ EBTNodeResult::Type UBTTask_RunAway::ExecuteTask(UBehaviorTreeComponent& OwnerCo
             return EBTNodeResult::Succeeded;
         }
     }
-	else UE_LOG(LogTemp, Warning, TEXT("No room found to run away in UBTTask_RunAway::ExecuteTask"));
 
 	return EBTNodeResult::Failed;
 }
@@ -108,9 +107,6 @@ bool UBTTask_RunAway::GetRandomLocationInRoom(ARoomVolume* Room, UNavigationSyst
 {
     if (!Room || !NavSys) return false;
 
-    // Log room and navsys for debugging
-    UE_LOG(LogTemp, Warning, TEXT("Getting random location in room: %s, NavSys: %s"), *Room->GetName(), *NavSys->GetName());
-
     FVector Origin, BoxExtent;
     Room->GetActorBounds(false, Origin, BoxExtent);
 
@@ -131,15 +127,12 @@ bool UBTTask_RunAway::GetRandomLocationInRoom(ARoomVolume* Room, UNavigationSyst
             ProjectedLocation,
             FVector(50.f, 50.f, BoxExtent.Z)))
         {
-            UE_LOG(LogTemp, Warning, TEXT("Projected location: %s"), *ProjectedLocation.Location.ToString());
             if (Room->EncompassesPoint(ProjectedLocation.Location))
             {
                 OutLocation = ProjectedLocation;
                 return true;
             }
-            else UE_LOG(LogTemp, Warning, TEXT("Projected location %s is not within room bounds."), *ProjectedLocation.Location.ToString());
         }
-        else UE_LOG(LogTemp, Warning, TEXT("Failed to project point %s to navigation."), *RandomPoint.ToString());
     }
 
     return false;
