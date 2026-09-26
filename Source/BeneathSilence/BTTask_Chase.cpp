@@ -33,7 +33,7 @@ EBTNodeResult::Type UBTTask_Chase::ExecuteTask(UBehaviorTreeComponent& OwnerComp
 		{
 			if (FVector::Dist(Player->GetActorLocation(), Enemy->GetActorLocation()) <= 100.f)
 			{
-				//UGameplayStatics::ApplyDamage(Player, 20.f, Enemy->GetController(), Enemy, UDamageType::StaticClass());
+				UGameplayStatics::ApplyDamage(Player, 20.f, Enemy->GetController(), Enemy, UDamageType::StaticClass());
 				BlackboardComp->SetValueAsBool("IsPlayerCaught", true);
 			}
 

@@ -46,41 +46,45 @@ void AEnemyAIController::Tick(float DeltaTime)
 		{
 			BlackboardComp->SetValueAsFloat("CurrentDistanceToPlayer",FVector::Dist(GetPawn()->GetActorLocation(), Player->GetActorLocation()));
 
-			if (BlackboardComp->GetValueAsFloat("CurrentDistanceToPlayer") < 500.f)
+			if (BlackboardComp->GetValueAsFloat("CurrentDistanceToPlayer") <= 500.f)
 			{
 				BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") + DeltaTime * 0.2f, 0.f, 1.f));
 			}
 			
-			if (BlackboardComp->GetValueAsFloat("CurrentDistanceToPlayer") > 1500.f)
+			if (BlackboardComp->GetValueAsFloat("CurrentDistanceToPlayer") >= 1200.f)
 			{
 				BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") - DeltaTime * 0.2f, 0.f, 1.f));
 			}
 		}
 		
-		if (PlayerCurrentRoom) BlackboardComp->SetValueAsObject("PlayerCurrentRoom", PlayerCurrentRoom);
-		if (EnemyCurrentRoom) BlackboardComp->SetValueAsObject("EnemyCurrentRoom", EnemyCurrentRoom);
+		if (PlayerCurrentRoom && EnemyCurrentRoom)
+		{
+			BlackboardComp->SetValueAsObject("PlayerCurrentRoom", PlayerCurrentRoom);
+			BlackboardComp->SetValueAsObject("EnemyCurrentRoom", EnemyCurrentRoom);
+		}
 
-		if (BlackboardComp->GetValueAsBool("IsAdjacentToPlayerRoom"))
+		if (BlackboardComp->GetValueAsBool("IsAdjacentToPlayerRoom") || PlayerCurrentRoom == EnemyCurrentRoom)
 		{
 			BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") + DeltaTime * 0.05f, 0.f, 1.f));
+			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") - DeltaTime * 0.01f, 0.f, 1.f));
 		}
 		else
 		{
 			BlackboardComp->SetValueAsFloat("CurrentTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("CurrentTensionLevel") - DeltaTime * 0.1f, 0.f, 1.f));
 		}
 
-		if (BlackboardComp->GetValueAsFloat("TimeSinceLastSeen") > 15.f)
+		if (BlackboardComp->GetValueAsFloat("TimeSinceLastSeen") > 10.f)
 		{
-			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") + DeltaTime * 0.1f, 0.f, 1.f));
+			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") + DeltaTime * 0.05f, 0.f, 1.f));
 		}
 
-		if (BlackboardComp->GetValueAsFloat("CurrentTensionLevel") >= 0.8f)
+		if (BlackboardComp->GetValueAsFloat("CurrentTensionLevel") >= 0.7f)
 		{
-			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") - DeltaTime * 0.05f, 0.f, 1.f));
+			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") - DeltaTime * 0.1f, 0.f, 1.f));
 		}
-		else if (BlackboardComp->GetValueAsFloat("CurrentTensionLevel") <= 0.2)
+		else if (BlackboardComp->GetValueAsFloat("CurrentTensionLevel") <= 0.3f)
 		{
-			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") + DeltaTime * 0.01f, 0.f, 1.f));
+			BlackboardComp->SetValueAsFloat("DesiredTensionLevel", FMath::Clamp(BlackboardComp->GetValueAsFloat("DesiredTensionLevel") + DeltaTime * 0.05f, 0.f, 1.f));
 		}
 	}
 
