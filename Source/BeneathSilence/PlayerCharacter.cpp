@@ -120,12 +120,20 @@ void APlayerCharacter::MoveForwardsHandler(const FInputActionValue& Value)
 	
 	PreviousForwardInputValue = ForwardInputValue;
 	ForwardInputValue = InputValue;
-	APlayerController* PC = Cast<APlayerController>(GetController());
 
+	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC && PC->PlayerCameraManager)
 	{
-		const FRotator CameraRotation = PC->PlayerCameraManager->GetCameraRotation();
-		MoveForward(InputValue, CameraRotation.Yaw);
+		const bool bIsMoving = !FMath::IsNearlyZero(ForwardInputValue) || !FMath::IsNearlyZero(StrafeInputValue);
+
+		if (bIsMoving && !bMovementYawLocked)
+		{
+			MovementYaw = PC->PlayerCameraManager->GetCameraRotation().Yaw;
+			bMovementYawLocked = true;
+		}
+		if (!bIsMoving) bMovementYawLocked = false;
+
+		MoveForward(InputValue, MovementYaw);
 	}
 }
 
@@ -135,12 +143,19 @@ void APlayerCharacter::StrafeHandler(const FInputActionValue& Value)
 
 	PreviousStrafeInputValue = StrafeInputValue;
 	StrafeInputValue = InputValue;
-	APlayerController* PC = Cast<APlayerController>(GetController());
 
+	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC && PC->PlayerCameraManager)
 	{
-		const FRotator CameraRotation = PC->PlayerCameraManager->GetCameraRotation();
-		Strafe(InputValue, CameraRotation.Yaw);
+		const bool bIsMoving = !FMath::IsNearlyZero(ForwardInputValue) || !FMath::IsNearlyZero(StrafeInputValue);
+		if (bIsMoving && !bMovementYawLocked) 
+		{
+			MovementYaw = PC->PlayerCameraManager->GetCameraRotation().Yaw;
+			bMovementYawLocked = true;
+		}
+		if (!bIsMoving) bMovementYawLocked = false;
+
+		Strafe(InputValue, MovementYaw);
 	}
 }
 

@@ -79,6 +79,10 @@ private:
 	float PreviousForwardInputValue = 0.0f;
 	UPROPERTY(EditAnywhere)
 	float PreviousStrafeInputValue = 0.0f;
+	UPROPERTY(EditAnywhere)
+	float MovementYaw = 0.0f;
+	UPROPERTY(EditAnywhere)
+	bool bMovementYawLocked = false;
 
 	// Handler declarations
 	void MoveForwardsHandler(const FInputActionValue& Value);
