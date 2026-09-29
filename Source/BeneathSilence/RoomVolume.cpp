@@ -20,6 +20,8 @@ ARoomVolume::ARoomVolume()
 void ARoomVolume::HandleBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
     if (OtherActor == nullptr) return;
+    if (!OtherActor->IsA(APlayerCharacter::StaticClass()) && !OtherActor->IsA(AEnemyCharacter::StaticClass())) return;
+
     AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AEnemyCharacter::StaticClass()));
     ACharacter* PlayerCharacter = Cast<ACharacter>(OtherActor);
     AAIController* AIController = Cast<AAIController>(EnemyCharacter->GetController());
