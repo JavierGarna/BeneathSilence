@@ -3,6 +3,8 @@
 
 #include "BTTask_Investigate.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "EnemyCharacter.h"
+#include "EnemyAIController.h"
 
 UBTTask_Investigate::UBTTask_Investigate()
 {
@@ -22,9 +24,28 @@ EBTNodeResult::Type UBTTask_Investigate::ExecuteTask(UBehaviorTreeComponent& Own
 	{
 		BlackboardComp->ClearValue(StimulusLocationKey.SelectedKeyName);
 		BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), StimulusLocation);
+		AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(OwnerComponent.GetAIOwner());
+		AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(EnemyAIController->GetPawn());
+
+		if (Enemy)
+		{
+			Enemy->bIsRunning = true;
+		}
 
 		return EBTNodeResult::Succeeded;
 	}
 
 	return EBTNodeResult::Failed;
+}
+
+void UBTTask_Investigate::OnTaskFinished(UBehaviorTreeComponent& OwnerComponent, uint8* NodeMemory, EBTNodeResult::Type TaskResult)
+{
+	Super::OnTaskFinished(OwnerComponent, NodeMemory, TaskResult);
+
+	AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(OwnerComponent.GetAIOwner());
+	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(EnemyAIController->GetPawn());
+	if (Enemy)
+	{
+		Enemy->bIsRunning = false;
+	}
 }

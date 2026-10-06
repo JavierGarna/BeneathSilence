@@ -27,6 +27,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void ResetToInitialLocation() { SetActorLocation(InitialLocation); }
+	bool bIsRunning = false;
 
 private:
 	bool bManagerFound = false;

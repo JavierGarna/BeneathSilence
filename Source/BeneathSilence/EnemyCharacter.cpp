@@ -4,6 +4,7 @@
 #include "EnemyCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "LearningAgentsManager.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 AEnemyCharacter::AEnemyCharacter()
@@ -45,6 +46,15 @@ void AEnemyCharacter::BeginPlay()
 void AEnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (bIsRunning)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 450.0f; // Running speed
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 300.0f; // Walking speed
+	}
 
 }
 

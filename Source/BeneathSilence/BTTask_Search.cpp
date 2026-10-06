@@ -3,6 +3,7 @@
 
 #include "BTTask_Search.h"
 #include "EnemyAIController.h"
+#include "EnemyCharacter.h"
 #include "NavigationSystem.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "RoomVolume.h"
@@ -172,6 +173,11 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     {
         BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), RandomLocation.Location);
 		BlackboardComp->SetValueAsObject("TargetRoom", CurrentRoom);
+		AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(AIPawn);
+		if (EnemyCharacter)
+		{
+			EnemyCharacter->bIsRunning = false;
+		} 
 
         return EBTNodeResult::Succeeded;
     }
