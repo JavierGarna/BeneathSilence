@@ -12,6 +12,7 @@
 #include "Perception/AIPerceptionTypes.h"
 #include "Perception/AISense_Hearing.h"
 #include "Perception/AIPerceptionSystem.h"
+#include "BehaviorTree/BlackboardData.h"
 
 void AEnemyAIController::BeginPlay()
 {
@@ -31,6 +32,7 @@ void AEnemyAIController::BeginPlay()
 
 	if (PerceptionComp) PerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &AEnemyAIController::OnTargetPerceptionUpdated);
 	else UE_LOG(LogTemp, Warning, TEXT("PerceptionComp is null in AEnemyAIController::BeginPlay()"));
+
 }
 
 void AEnemyAIController::Tick(float DeltaTime)
@@ -42,6 +44,12 @@ void AEnemyAIController::Tick(float DeltaTime)
 		BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", BlackboardComp->GetValueAsFloat("TimeSinceLastSeen") + DeltaTime);
 		BlackboardComp->SetValueAsFloat("TimeSinceLastStimulus", BlackboardComp->GetValueAsFloat("TimeSinceLastStimulus") + DeltaTime);
 
+		AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(GetPawn());
+		if (Enemy)
+		{
+			Enemy->bIsRunning = (BlackboardComp->GetValueAsEnum("CurrentState") != 0);
+		}
+			
 		if (Player && GetPawn())
 		{
 			BlackboardComp->SetValueAsFloat("CurrentDistanceToPlayer",FVector::Dist(GetPawn()->GetActorLocation(), Player->GetActorLocation()));

@@ -40,7 +40,6 @@ EBTNodeResult::Type UBTTask_Chase::ExecuteTask(UBehaviorTreeComponent& OwnerComp
 			BlackboardComp->SetValueAsVector("LastKnownPlayerLocation", Player->GetActorLocation());
 			BlackboardComp->SetValueAsObject("LastKnownPlayerRoom", Cast<UObject>(EnemyAIController->GetPlayerCurrentRoom()));
 			BlackboardComp->SetValueAsFloat("TimeSinceLastSeen", 0.f);
-			Enemy->bIsRunning = true;
 
 			return EBTNodeResult::Succeeded;
 		}
@@ -67,13 +66,6 @@ void UBTTask_Chase::TickTask(UBehaviorTreeComponent& OwnerComponent, uint8* Node
 void UBTTask_Chase::OnTaskFinished(UBehaviorTreeComponent& OwnerComponent, uint8* NodeMemory, EBTNodeResult::Type TaskResult)
 {
 	TimeChasingPlayer = 0.f;
-	AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(OwnerComponent.GetAIOwner());
-	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(EnemyAIController->GetPawn());
-
-	if (Enemy)
-	{
-		Enemy->bIsRunning = false;
-	}
 
 	UBlackboardComponent* BlackboardComp = OwnerComponent.GetBlackboardComponent();
 	if (BlackboardComp)

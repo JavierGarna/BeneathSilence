@@ -25,12 +25,6 @@ EBTNodeResult::Type UBTTask_Investigate::ExecuteTask(UBehaviorTreeComponent& Own
 		BlackboardComp->ClearValue(StimulusLocationKey.SelectedKeyName);
 		BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), StimulusLocation);
 		AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(OwnerComponent.GetAIOwner());
-		AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(EnemyAIController->GetPawn());
-
-		if (Enemy)
-		{
-			Enemy->bIsRunning = true;
-		}
 
 		return EBTNodeResult::Succeeded;
 	}
@@ -42,10 +36,4 @@ void UBTTask_Investigate::OnTaskFinished(UBehaviorTreeComponent& OwnerComponent,
 {
 	Super::OnTaskFinished(OwnerComponent, NodeMemory, TaskResult);
 
-	AEnemyAIController* EnemyAIController = Cast<AEnemyAIController>(OwnerComponent.GetAIOwner());
-	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(EnemyAIController->GetPawn());
-	if (Enemy)
-	{
-		Enemy->bIsRunning = false;
-	}
 }

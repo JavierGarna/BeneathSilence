@@ -103,6 +103,8 @@ private:
 
 	UPROPERTY()
 	int HasHeardPlayerTimer = 0;
+	UPROPERTY()
+	uint8 LastAudioState = 255;
 
 	UFUNCTION()
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);

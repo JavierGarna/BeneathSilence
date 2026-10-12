@@ -173,11 +173,6 @@ EBTNodeResult::Type UBTTask_Search::ExecuteTask(UBehaviorTreeComponent& OwnerCom
     {
         BlackboardComp->SetValueAsVector(GetSelectedBlackboardKey(), RandomLocation.Location);
 		BlackboardComp->SetValueAsObject("TargetRoom", CurrentRoom);
-		AEnemyCharacter* EnemyCharacter = Cast<AEnemyCharacter>(AIPawn);
-		if (EnemyCharacter)
-		{
-			EnemyCharacter->bIsRunning = false;
-		} 
 
         return EBTNodeResult::Succeeded;
     }
