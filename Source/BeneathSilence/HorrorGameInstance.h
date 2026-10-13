@@ -15,6 +15,8 @@ class BENEATHSILENCE_API UHorrorGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+	UHorrorGameInstance();
+
 	UFUNCTION(BlueprintCallable)
 	int ClaimScan();
 	UFUNCTION(BlueprintCallable)
@@ -22,5 +24,5 @@ public:
 	
 private:
 	static constexpr int MAXSCANS = 20;
-	int Scans[MAXSCANS] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+	int Scans[MAXSCANS];
 };

@@ -3,6 +3,14 @@
 
 #include "HorrorGameInstance.h"
 
+UHorrorGameInstance::UHorrorGameInstance() 
+{
+	for (int32 i = 0; i < MAXSCANS; i++)
+	{
+		Scans[i] = -1;
+	}
+}
+
 int UHorrorGameInstance::ClaimScan()
 {
 	for (int i = 0; i < MAXSCANS; i++)
