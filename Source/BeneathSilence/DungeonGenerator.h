@@ -7,6 +7,7 @@
 #include "DungeonGenerator.generated.h"
 
 class ARoomBase;
+class AEnemyCharacter;
 
 USTRUCT(BlueprintType)
 struct FRoomPlacement
@@ -51,6 +52,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Dungeon")
 	void GenerateDungeon();
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<AEnemyCharacter> EnemyClass;
+
+	UPROPERTY()
+	TObjectPtr<AEnemyCharacter> Enemy = nullptr;
+
 private:
 	UPROPERTY()
 	TMap<FIntPoint, TObjectPtr<ARoomBase>> SpawnedRooms;
@@ -62,5 +69,7 @@ private:
 	void ConnectRooms();
 
 	bool CanPlaceRoom(FIntPoint Position, FIntPoint RoomDimensions, const TSet<FIntPoint>& Occupied) const;
+
+	void SpawnEnemy();
 
 };

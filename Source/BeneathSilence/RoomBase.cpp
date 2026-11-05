@@ -1,11 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "RoomBase.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/ChildActorComponent.h"
 #include "Camera/CameraComponent.h"
 
 #include "PlayerCharacter.h"
@@ -20,8 +19,7 @@
 // Sets default values
 ARoomBase::ARoomBase()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+    PrimaryActorTick.bCanEverTick = true;
 
     SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
     RootComponent = SceneRoot;
@@ -32,7 +30,7 @@ ARoomBase::ARoomBase()
     RoomTrigger->SetCollisionProfileName(TEXT("Trigger"));
 
     RoomCamera = CreateDefaultSubobject<UChildActorComponent>(TEXT("RoomCamera"));
-	RoomCamera->SetupAttachment(RootComponent);
+    RoomCamera->SetupAttachment(RootComponent);
     RoomCamera->SetChildActorClass(AFixedCamera::StaticClass());
 
     RoomTrigger->OnComponentBeginOverlap.AddDynamic(this, &ARoomBase::HandleBeginOverlap);
@@ -53,13 +51,13 @@ ARoomBase::ARoomBase()
 // Called when the game starts or when spawned
 void ARoomBase::BeginPlay()
 {
-	Super::BeginPlay();
-	
+    Super::BeginPlay();
+
     Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
     Enemy = Cast<AEnemyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AEnemyCharacter::StaticClass()));
 
-    if (Enemy)
+    if (IsValid(Enemy))
     {
         EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
     }
@@ -68,13 +66,23 @@ void ARoomBase::BeginPlay()
 // Called every frame
 void ARoomBase::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+    Super::Tick(DeltaTime);
 
-    if (!EnemyAIController) return;
+    if (!IsValid(Enemy))
+    {
+        Enemy = Cast<AEnemyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AEnemyCharacter::StaticClass()));
+    }
+
+    if (!IsValid(EnemyAIController) && IsValid(Enemy))
+    {
+        EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
+    }
+
+    if (!IsValid(EnemyAIController)) return;
 
     UBlackboardComponent* BlackboardComp = EnemyAIController->GetBlackboardComponent();
 
-    if (!BlackboardComp) return;
+    if (!IsValid(BlackboardComp)) return;
 
     if (BlackboardComp->GetValueAsObject("PlayerCurrentRoom") == this)
     {
@@ -104,12 +112,60 @@ void ARoomBase::AddConnectedRoom(ARoomBase* Room)
 
 void ARoomBase::HandleBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    if (!OtherActor) return;
+    if (!IsValid(OtherActor)) return;
+
+    if (OtherActor->IsA(APlayerCharacter::StaticClass()))
+    {
+        Player = Cast<APlayerCharacter>(OtherActor);
+
+        APlayerController* PlayerController = Cast<APlayerController>(Player->GetController());
+
+        if (IsValid(PlayerController) && IsValid(RoomCamera))
+        {
+            AFixedCameraManager* CameraManager = Cast<AFixedCameraManager>(PlayerController->PlayerCameraManager);
+
+            if (IsValid(CameraManager))
+            {
+                AFixedCamera* Camera = Cast<AFixedCamera>(RoomCamera->GetChildActor());
+
+                if (IsValid(Camera))
+                {
+                    CameraManager->SwitchToFixedCamera(Camera);
+
+                    UE_LOG(LogTemp, Warning, TEXT("Camera switched in room: %s"), *GetName());
+                }
+            }
+        }
+    }
+    else if (OtherActor->IsA(AEnemyCharacter::StaticClass()))
+    {
+        Enemy = Cast<AEnemyCharacter>(OtherActor);
+
+        if (IsValid(Enemy))
+        {
+            EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
+        }
+    }
+    else
+    {
+        return;
+    }
+
+    if (!IsValid(Enemy))
+    {
+        Enemy = Cast<AEnemyCharacter>(UGameplayStatics::GetActorOfClass(GetWorld(), AEnemyCharacter::StaticClass()));
+    }
+
+    if (!IsValid(EnemyAIController) && IsValid(Enemy))
+    {
+        EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
+    }
+
     if (!IsValid(EnemyAIController)) return;
 
     UBlackboardComponent* BlackboardComp = EnemyAIController->GetBlackboardComponent();
 
-	if (!BlackboardComp) return;
+    if (!IsValid(BlackboardComp)) return;
 
     if (OtherActor == Enemy)
     {
@@ -118,27 +174,6 @@ void ARoomBase::HandleBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
     else if (OtherActor == Player)
     {
         BlackboardComp->SetValueAsObject("PlayerCurrentRoom", this);
-
-        APlayerController* PlayerController = Cast<APlayerController>(Player->GetController());
-
-        if (PlayerController && RoomCamera)
-        {
-            AFixedCameraManager* CameraManager = Cast<AFixedCameraManager>(PlayerController->PlayerCameraManager);
-
-            if (CameraManager)
-            {
-                AFixedCamera* Camera = Cast<AFixedCamera>(RoomCamera->GetChildActor());
-
-                if (Camera)
-                {
-                    CameraManager->SwitchToFixedCamera(Camera);
-                }
-            }
-        }
-    }
-    else
-    {
-        return;
     }
 
     UpdateRoomAdjacency();
@@ -146,11 +181,11 @@ void ARoomBase::HandleBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 
 void ARoomBase::UpdateRoomAdjacency()
 {
-    if (!EnemyAIController) return;
+    if (!IsValid(EnemyAIController)) return;
 
     UBlackboardComponent* BlackboardComp = EnemyAIController->GetBlackboardComponent();
 
-    if (!BlackboardComp) return;
+    if (!IsValid(BlackboardComp)) return;
 
     ARoomBase* PlayerRoom = Cast<ARoomBase>(BlackboardComp->GetValueAsObject("PlayerCurrentRoom"));
 
@@ -158,7 +193,7 @@ void ARoomBase::UpdateRoomAdjacency()
 
     bool bIsAdjacent = false;
 
-    if (PlayerRoom && EnemyRoom)
+    if (IsValid(PlayerRoom) && IsValid(EnemyRoom))
     {
         bIsAdjacent = PlayerRoom->ConnectedRooms.Contains(EnemyRoom);
     }
@@ -197,12 +232,10 @@ bool ARoomBase::CanConnectAt(FIntPoint LocalCell, FIntPoint Direction) const
 
 void ARoomBase::UpdateWalls()
 {
-    if (!SolidWallMesh || !DoorWallMesh)
-        return;
+    if (!SolidWallMesh || !DoorWallMesh) return;
 
     NorthWall->SetStaticMesh(bDoorNorth ? DoorWallMesh : SolidWallMesh);
     SouthWall->SetStaticMesh(bDoorSouth ? DoorWallMesh : SolidWallMesh);
     EastWall->SetStaticMesh(bDoorEast ? DoorWallMesh : SolidWallMesh);
     WestWall->SetStaticMesh(bDoorWest ? DoorWallMesh : SolidWallMesh);
 }
-

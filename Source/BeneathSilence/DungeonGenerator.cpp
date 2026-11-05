@@ -3,6 +3,7 @@
 #include "DungeonGenerator.h"
 #include "RoomBase.h"
 #include "DrawDebugHelpers.h"
+#include "EnemyCharacter.h"
 
 // Sets default values
 ADungeonGenerator::ADungeonGenerator()
@@ -466,4 +467,21 @@ bool ADungeonGenerator::CanPlaceRoom(FIntPoint Position, FIntPoint RoomDimension
     }
 
     return true;
+}
+
+void ADungeonGenerator::SpawnEnemy()
+{
+    if (!EnemyClass || !GetWorld() || SpawnedRooms.IsEmpty())
+        return;
+
+    // Prevent spawning multiple enemies
+    if (IsValid(Enemy)) return;
+
+    ARoomBase* Room = SpawnedRooms[FMath::RandRange(1, SpawnedRooms.Num() - 1)];
+
+    if (!IsValid(Room)) return;
+
+    FVector SpawnLocation = Room->GetActorLocation() + FVector(0, 0, 100);
+
+    Enemy = GetWorld()->SpawnActor<AEnemyCharacter>(EnemyClass, SpawnLocation, FRotator::ZeroRotator);
 }

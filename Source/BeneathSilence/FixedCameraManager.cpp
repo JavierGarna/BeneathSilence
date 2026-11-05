@@ -14,54 +14,36 @@ AFixedCameraManager::AFixedCameraManager()
 
 void AFixedCameraManager::SwitchToFixedCamera(AFixedCamera* NewCameraActor, float BlendTime)
 {
-    if (!NewCameraActor) return;
-
-    if (NewCameraActor == CurrentFixedCamera) return;
+    if (!IsValid(NewCameraActor)) return;
 
     UCameraComponent* NewCameraComp = GetCameraComponent(NewCameraActor);
 
-    if (!NewCameraComp) return;
+    if (!IsValid(NewCameraComp)) return;
 
-    if (CurrentFixedCamera)
-    {
-        UCameraComponent* CurrentCameraComp = GetCameraComponent(CurrentFixedCamera);
-    }
-    else
-    {
-        CurrentFixedCamera = NewCameraActor;
-        return;
-    }
+    if (NewCameraActor == CurrentFixedCamera) return;
 
-    TargetFixedCamera = NewCameraActor;
+    CurrentFixedCamera = NewCameraActor;
+    TargetFixedCamera = nullptr;
 }
 
 void AFixedCameraManager::UpdateViewTarget(FTViewTarget& OutVT, float DeltaTime)
 {
     Super::UpdateViewTarget(OutVT, DeltaTime);
 
-    if (TargetFixedCamera)
-    {
-        CurrentFixedCamera = TargetFixedCamera;
-        TargetFixedCamera = nullptr;
-    }
-    else if (CurrentFixedCamera)
-    {
-        UCameraComponent* CameraComp = GetCameraComponent(CurrentFixedCamera);
-        if (CameraComp)
-        {
-            OutVT.POV.Location = CameraComp->GetComponentLocation();
-            OutVT.POV.Rotation = CameraComp->GetComponentRotation();
-            OutVT.POV.FOV = CameraComp->FieldOfView;
-        }
-    }
+    if (!IsValid(CurrentFixedCamera)) return;
+
+    UCameraComponent* CameraComp = GetCameraComponent(CurrentFixedCamera);
+
+    if (!IsValid(CameraComp)) return;
+
+    OutVT.POV.Location = CameraComp->GetComponentLocation();
+    OutVT.POV.Rotation = CameraComp->GetComponentRotation();
+    OutVT.POV.FOV = CameraComp->FieldOfView;
 }
 
 UCameraComponent* AFixedCameraManager::GetCameraComponent(AFixedCamera* Actor) const
 {
-    if (!Actor)
-    {
-        return nullptr;
-    }
+    if (!IsValid(Actor)) return nullptr;
 
     return Actor->FindComponentByClass<UCameraComponent>();
 }
