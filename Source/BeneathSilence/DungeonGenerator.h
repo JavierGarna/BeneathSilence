@@ -8,6 +8,20 @@
 
 class ARoomBase;
 
+USTRUCT(BlueprintType)
+struct FRoomPlacement
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY()
+	FIntPoint Position = FIntPoint(0, 0);
+	UPROPERTY()
+	FIntPoint RoomDimensions = FIntPoint(1, 1);
+	UPROPERTY()
+	TSubclassOf<ARoomBase> RoomClass;
+};
+
 UCLASS()
 class BENEATHSILENCE_API ADungeonGenerator : public AActor
 {
@@ -41,10 +55,12 @@ private:
 	UPROPERTY()
 	TMap<FIntPoint, TObjectPtr<ARoomBase>> SpawnedRooms;
 
-	TArray<FIntPoint> GenerateLayout() const;
+	TArray<FRoomPlacement> GenerateLayout() const;
 
-	void SpawnRooms(const TArray<FIntPoint>& Layout);
+	void SpawnRooms(const TArray<FRoomPlacement>& Layout);
 
 	void ConnectRooms();
+
+	bool CanPlaceRoom(FIntPoint Position, FIntPoint RoomDimensions, const TSet<FIntPoint>& Occupied) const;
 
 };

@@ -166,6 +166,35 @@ void ARoomBase::UpdateRoomAdjacency()
     BlackboardComp->SetValueAsBool("IsAdjacentToPlayerRoom", bIsAdjacent);
 }
 
+bool ARoomBase::CanConnectAt(FIntPoint LocalCell, FIntPoint Direction) const
+{
+    if (Direction == FIntPoint(0, -1))
+    {
+        return LocalCell.X == RoomDimensions.X - 1 &&
+            LocalCell.Y == 0;
+    }
+
+    if (Direction == FIntPoint(0, 1))
+    {
+        return LocalCell.X == RoomDimensions.X - 1 &&
+            LocalCell.Y == RoomDimensions.Y - 1;
+    }
+
+    if (Direction == FIntPoint(1, 0))
+    {
+        return LocalCell.X == RoomDimensions.X - 1 &&
+            LocalCell.Y == 0;
+    }
+
+    if (Direction == FIntPoint(-1, 0))
+    {
+        return LocalCell.X == 0 &&
+            LocalCell.Y == 0;
+    }
+
+    return false;
+}
+
 void ARoomBase::UpdateWalls()
 {
     if (!SolidWallMesh || !DoorWallMesh)

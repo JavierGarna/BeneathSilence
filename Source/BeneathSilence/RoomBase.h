@@ -40,6 +40,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Room")
 	float EnemyTimeInRoom = 0.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FIntPoint RoomDimensions = FIntPoint(1, 1);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Doors")
 	bool bDoorNorth = false;
 
@@ -54,6 +57,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Room")
 	void AddConnectedRoom(ARoomBase* Room);
+
+	UFUNCTION(BlueprintCallable, Category = "Room")
+	bool CanConnectAt(FIntPoint LocalCell, FIntPoint Direction) const;
 
 	UFUNCTION(BlueprintCallable, Category = "Walls")
 	void UpdateWalls();
