@@ -61,6 +61,18 @@ void ARoomBase::BeginPlay()
     {
         EnemyAIController = Cast<AEnemyAIController>(Enemy->GetController());
     }
+
+    TArray<UStaticMeshComponent*> Meshes;
+    GetComponents<UStaticMeshComponent>(Meshes);
+
+    for (UStaticMeshComponent* Mesh : Meshes)
+    {
+        if (IsValid(Mesh))
+        {
+            Mesh->SetRenderCustomDepth(true);
+            Mesh->SetCustomDepthStencilValue(1);
+        }
+    }
 }
 
 // Called every frame
